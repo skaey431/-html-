@@ -1,64 +1,102 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <title>HTML → PDF (Print)</title>
-  <style>
-    /* 화면에서 보기 좋게 */
-    body { font-family: system-ui, sans-serif; margin: 0; background:#f6f7f9; }
-    .sheet {
-      width: 210mm;               /* A4 가로 */
-      min-height: 297mm;          /* A4 세로 */
-      margin: 16px auto;
-      background: white;
-      box-shadow: 0 4px 24px rgba(0,0,0,.1);
-      padding: 20mm;
-      box-sizing: border-box;
-    }
-    h1 { margin: 0 0 8mm; }
-    .btns { position: sticky; top: 0; background: #f6f7f9; padding: 12px; text-align: center; }
-    .btns button { padding:10px 16px; border:0; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.15); cursor:pointer; }
-
-    /* 인쇄 전용 설정 */
-    @page {
-      size: A4;           /* A4, 필요하면 Letter 등으로 변경 */
-      margin: 12mm;       /* 프린트 여백 */
-    }
-    @media print {
-      body { background: white; }
-      .btns { display: none; }      /* 버튼 숨김 */
-      .sheet { box-shadow: none; width: auto; min-height: auto; padding: 0; }
-      a[href]:after { content: " (" attr(href) ")"; font-size: 10pt; } /* 링크 주소 표시(선택) */
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>점호 열외 관리</title>
+    <style>
+        table, th, td { border:1px solid black; border-collapse: collapse; padding:5px; text-align:center; }
+        th { background:#eee; }
+        select, input[type="text"] { width:150px; }
+    </style>
 </head>
 <body>
-  <div class="btns">
-    <button onclick="window.print()">PDF로 저장</button>
-  </div>
+<h2>점호 열외 입력</h2>
+<table id="inputTable">
+    <thead>
+    <tr>
+        <th>이름</th>
+        <th>열외 구분</th>
+        <th>열외 사유</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+<button onclick="addRow()">행 추가</button>
+<button onclick="makeSummary()">집계표 생성</button>
 
-  <main class="sheet">
-    <h1>샘플 보고서 제목</h1>
-    <p>이 문서는 브라우저의 인쇄 기능으로 PDF를 저장합니다.</p>
+<h2>집계표</h2>
+<table id="summaryTable">
+    <thead>
+    <tr>
+        <th>열외 사유</th>
+        <th>명수</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
-    <h2>섹션 1</h2>
-    <p>콘텐츠를 자유롭게 넣으세요. 표/이미지도 인쇄됨.</p>
+<script>
+    const STORAGE_KEY = "attendanceExclusion";
 
-    <h2>표 예시</h2>
-    <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; width:100%;">
-      <thead><tr><th>항목</th><th>값</th></tr></thead>
-      <tbody>
-        <tr><td>Alpha</td><td>123</td></tr>
-        <tr><td>Beta</td><td>456</td></tr>
-        <tr><td>Gamma</td><td>789</td></tr>
-      </tbody>
-    </table>
+    // 행 추가
+    function addRow(name="", type="저녁 점호 열외", reason="") {
+        const tbody = document.querySelector("#inputTable tbody");
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+    <td><input type="text" value="${name}" placeholder="이름" oninput="saveData()"></td>
+    <td>
+      <select onchange="saveData()">
+        <option ${type==='저녁 점호 열외'?'selected':''}>저녁 점호 열외</option>
+        <option ${type==='아침 점호 열외'?'selected':''}>아침 점호 열외</option>
+      </select>
+    </td>
+    <td><input type="text" value="${reason}" placeholder="열외 사유" oninput="saveData()"></td>
+  `;
+        tbody.appendChild(tr);
+    }
 
-    <h2>페이지 나누기</h2>
-    <p style="page-break-after: always;">여기서 페이지 나눔.</p>
+    // 저장
+    function saveData() {
+        const rows = [...document.querySelectorAll("#inputTable tbody tr")];
+        const data = rows.map(row => ({
+            name: row.querySelector("td:nth-child(1) input").value,
+            type: row.querySelector("td:nth-child(2) select").value,
+            reason: row.querySelector("td:nth-child(3) input").value
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
 
-    <h2>2페이지 시작</h2>
-    <p>계속 내용…</p>
-  </main>
+    // 불러오기
+    function loadData() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if(!saved) { addRow(); return; }
+        const data = JSON.parse(saved);
+        data.forEach(item => addRow(item.name, item.type, item.reason));
+    }
+
+    // 집계
+    function makeSummary() {
+        const rows = document.querySelectorAll("#inputTable tbody tr");
+        const summary = {};
+
+        rows.forEach(row => {
+            const reason = row.querySelector("td:nth-child(3) input").value.trim();
+            if(!reason) return;
+            if(!summary[reason]) summary[reason] = 0;
+            summary[reason]++;
+        });
+
+        const tbody = document.querySelector("#summaryTable tbody");
+        tbody.innerHTML = "";
+        for(let reason in summary) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${reason}</td><td>${summary[reason]}</td>`;
+            tbody.appendChild(tr);
+        }
+    }
+
+    // 초기 로드
+    loadData();
+</script>
 </body>
 </html>
