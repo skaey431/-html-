@@ -1,202 +1,88 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>CCTV & 용사 통합 관리</title>
-    <style>
-        table, th, td { border:1px solid black; border-collapse: collapse; padding:5px; text-align:center; }
-        th { background:#eee; }
-        input[type="text"], input[type="month"] { width:100px; }
-        input[type="checkbox"] { transform: scale(1.2); }
-        button { margin:5px; padding:5px 10px; }
-        .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5); justify-content:center; align-items:center; }
-        .modal-content { background:white; padding:20px; border-radius:5px; max-height:80%; overflow-y:auto; }
-        .unitDisplay, .barracksDisplay { display:block; margin-top:3px; font-weight:bold; }
-    </style>
+<meta charset="UTF-8">
+<title>메인 페이지</title>
+<style>
+  table, th, td { border:1px solid black; border-collapse: collapse; padding:5px; text-align:center; }
+  th { background:#eee; }
+  button { margin:5px; }
+  .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:flex-start; padding-top:50px; overflow:auto; }
+  .modal-content { background:white; padding:20px; border-radius:5px; max-height:90%; overflow-y:auto; min-width:700px; }
+  .unitDisplay, .barracksDisplay { display:block; margin-top:3px; font-weight:bold; }
+</style>
 </head>
 <body>
 
 <h2>메인 페이지</h2>
 
-<button onclick="openCCTVModal()">CCTV 관리</button>
-<button onclick="openSoldierModal()">용사 신상 관리</button>
+<button onclick="openModal('cctvModal')">CCTV 관리</button>
+<button onclick="openModal('soldierModal')">용사 신상 관리</button>
+<button onclick="openMaintenanceModal()">유지보수 관리</button>
 
 <h3>CCTV 근무자 현황</h3>
 <table id="cctvSummary">
-    <thead>
+  <thead>
     <tr><th>이름</th><th>중대</th><th>생활관</th></tr>
-    </thead>
-    <tbody></tbody>
+  </thead>
+  <tbody></tbody>
 </table>
 
 <!-- CCTV 모달 -->
 <div id="cctvModal" class="modal">
-    <div class="modal-content">
-        <h3>CCTV 관리</h3>
-        <table id="cctvTable">
-            <thead><tr><th>구분</th><th colspan="4">칸</th></tr></thead>
-            <tbody>
-            <tr id="dayRow"><td>주간</td></tr>
-            <tr id="nightRow"><td>야간</td></tr>
-            </tbody>
-        </table>
-        <button onclick="saveCCTVModal()">저장 후 닫기</button>
-    </div>
+  <div class="modal-content">
+    <h3>CCTV 관리</h3>
+    <table id="cctvTable">
+      <thead><tr><th>구분</th><th colspan="4">칸</th></tr></thead>
+      <tbody>
+        <tr id="dayRow"><td>주간</td></tr>
+        <tr id="nightRow"><td>야간</td></tr>
+      </tbody>
+    </table>
+    <button onclick="saveCCTV()">저장 후 닫기</button>
+    <button onclick="closeModal('cctvModal')">닫기</button>
+  </div>
 </div>
 
 <!-- 용사 모달 -->
 <div id="soldierModal" class="modal">
-    <div class="modal-content">
-        <h3>용사 신상 관리</h3>
-        <table id="soldierTable">
-            <thead>
-            <tr>
-                <th>이름</th><th>중대</th><th>생활관</th><th>입대</th><th>삭제</th>
-            </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <button onclick="addSoldierRow()">행 추가</button>
-        <button onclick="saveSoldiers()">저장 후 닫기</button>
-    </div>
+  <div class="modal-content">
+    <h3>용사 신상 관리</h3>
+    <input type="text" id="soldierSearch" placeholder="이름 검색..." oninput="filterSoldiers()">
+    <br><br>
+    중대: <select id="soldierCompany" onchange="onCompanyChange()"><option value="">중대 선택</option></select>
+    생활관: <select id="soldierRoom" disabled><option value="">생활관 선택</option></select>
+    <br><br>
+    <table id="soldierTable">
+      <thead>
+        <tr><th>삭제</th><th>이름</th><th>중대</th><th>생활관</th><th>입대</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="addSoldierRow()">행 추가</button>
+    <button onclick="deleteCheckedSoldiers()">삭제 선택 행</button>
+    <button onclick="saveSoldiers()">저장 후 닫기</button>
+    <button onclick="closeModal('soldierModal')">닫기</button>
+  </div>
 </div>
 
-<script>
-    const CCTV_KEY="cctvData";
-    const SOLDIER_KEY="soldierData";
+<!-- 유지보수 모달 -->
+<div id="maintenanceModal" class="modal">
+  <div class="modal-content">
+    <h3>유지보수 관리</h3>
+    <table id="maintenanceTable">
+      <tbody></tbody>
+    </table>
+    <button onclick="addCompany()">중대 추가</button>
+    <button onclick="saveMaintenance()">저장 후 닫기</button>
+    <button onclick="closeModal('maintenanceModal')">닫기</button>
+  </div>
+</div>
 
-    /* ---------- CCTV 모달 ---------- */
-    function openCCTVModal(){
-        document.getElementById("cctvModal").style.display="flex";
-        initCCTVTable();
-    }
+<script src="js/main.js"></script>
+<script src="js/cctv.js"></script>
+<script src="js/soldier.js"></script>
+<script src="js/maintenance.js"></script>
 
-    function initCCTVTable(){
-        const saved=JSON.parse(localStorage.getItem(CCTV_KEY)||"[]");
-        const dayRow=document.getElementById("dayRow");
-        const nightRow=document.getElementById("nightRow");
-        dayRow.innerHTML="<td>주간</td>";
-        nightRow.innerHTML="<td>야간</td>";
-        for(let i=0;i<4;i++) dayRow.appendChild(createCCTVCell(saved[i]));
-        for(let i=4;i<8;i++) nightRow.appendChild(createCCTVCell(saved[i]));
-    }
-
-    function createCCTVCell(data={active:false,name:""}){
-        const td=document.createElement("td");
-        td.innerHTML=`
-    <input type="checkbox" ${data.active?'checked':''} onchange="onCheckChange(this)">
-    <br>
-    <input type="text" value="${data.name}" placeholder="이름" ${data.active?'':'disabled'} oninput="updateUnitAndBarracks(this)">
-    <span class="unitDisplay"></span> <span class="barracksDisplay"></span>
-  `;
-        return td;
-    }
-
-    function onCheckChange(checkbox){
-        const input=checkbox.parentElement.querySelector("input[type=text]");
-        input.disabled=!checkbox.checked;
-        if(!checkbox.checked){
-            input.value="";
-            checkbox.parentElement.querySelector(".unitDisplay").innerText="";
-            checkbox.parentElement.querySelector(".barracksDisplay").innerText="";
-        }
-    }
-
-    /* 이름 입력 시 용사 신상에서 중대 + 생활관 표시 */
-    function updateUnitAndBarracks(input){
-        const name=input.value.trim();
-        const soldiers=JSON.parse(localStorage.getItem(SOLDIER_KEY)||"[]");
-        const soldier=soldiers.find(s=>s.name===name);
-        const unitDisplay=input.parentElement.querySelector(".unitDisplay");
-        const barracksDisplay=input.parentElement.querySelector(".barracksDisplay");
-        if(soldier){
-            unitDisplay.innerText=soldier.unit;
-            barracksDisplay.innerText=soldier.barracks||"";
-        } else {
-            unitDisplay.innerText="";
-            barracksDisplay.innerText="";
-        }
-    }
-
-    /* CCTV 저장 */
-    function saveCCTVModal(){
-        const rows=document.querySelectorAll("#cctvTable tbody tr");
-        const data=[];
-        rows.forEach(row=>{
-            const cells=row.querySelectorAll("td");
-            for(let i=1;i<cells.length;i++){
-                const td=cells[i];
-                const checkbox=td.querySelector("input[type=checkbox]");
-                const input=td.querySelector("input[type=text]");
-                data.push({active:checkbox.checked,name:input.value});
-            }
-        });
-        localStorage.setItem(CCTV_KEY,JSON.stringify(data));
-        document.getElementById("cctvModal").style.display="none";
-        renderCCTV();
-    }
-
-    function renderCCTV(){
-        const tbody=document.querySelector("#cctvSummary tbody");
-        tbody.innerHTML="";
-        const data=JSON.parse(localStorage.getItem(CCTV_KEY)||"[]");
-        const soldiers=JSON.parse(localStorage.getItem(SOLDIER_KEY)||"[]");
-        data.forEach(slot=>{
-            if(slot.active && slot.name.trim()!==""){
-                const soldier=soldiers.find(s=>s.name===slot.name);
-                const unit=soldier?soldier.unit:"";
-                const barracks=soldier?soldier.barracks:"";
-                const tr=document.createElement("tr");
-                tr.innerHTML=`<td>${slot.name}</td><td>${unit}</td><td>${barracks}</td>`;
-                tbody.appendChild(tr);
-            }
-        });
-    }
-
-    /* ---------- 용사 모달 ---------- */
-    function openSoldierModal(){ document.getElementById("soldierModal").style.display="flex"; loadSoldiers();}
-    function closeSoldierModal(){ document.getElementById("soldierModal").style.display="none"; }
-
-    function loadSoldiers(){
-        const tbody=document.querySelector("#soldierTable tbody");
-        tbody.innerHTML="";
-        const saved=JSON.parse(localStorage.getItem(SOLDIER_KEY)||"[]");
-        saved.forEach(s=>tbody.appendChild(createSoldierRow(s)));
-    }
-
-    function createSoldierRow(data={name:"",unit:"",barracks:"",enlistDate:""}){
-        const tr=document.createElement("tr");
-        tr.innerHTML=`
-    <td><input type="text" value="${data.name}"></td>
-    <td><input type="text" value="${data.unit}"></td>
-    <td><input type="text" value="${data.barracks}"></td>
-    <td><input type="month" value="${data.enlistDate || ''}"></td>
-    <td><button onclick="deleteSoldierRow(this)">삭제</button></td>
-  `;
-        return tr;
-    }
-
-    function addSoldierRow(){ document.querySelector("#soldierTable tbody").appendChild(createSoldierRow()); }
-    function deleteSoldierRow(btn){ if(confirm("정말 삭제하시겠습니까?")) btn.parentElement.parentElement.remove(); }
-
-    function saveSoldiers(){
-        const rows=document.querySelectorAll("#soldierTable tbody tr");
-        const data=[];
-        rows.forEach(row=>{
-            const cells=row.querySelectorAll("td input");
-            const name=cells[0].value.trim();
-            const unit=cells[1].value.trim();
-            const barracks=cells[2].value.trim();
-            const enlistDate=cells[3].value; // yyyy-MM
-            if(name!=="") data.push({name,unit,barracks,enlistDate});
-        });
-        localStorage.setItem(SOLDIER_KEY,JSON.stringify(data));
-        closeSoldierModal();
-        renderCCTV(); // CCTV 중대+생활관 갱신
-    }
-
-    /* 페이지 로드 시 초기 렌더링 */
-    renderCCTV();
-</script>
 </body>
 </html>
