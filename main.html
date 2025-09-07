@@ -19,11 +19,20 @@
 <button onclick="openModal('cctvModal')">CCTV 관리</button>
 <button onclick="openModal('soldierModal')">용사 신상 관리</button>
 <button onclick="openMaintenanceModal()">유지보수 관리</button>
+<button onclick="openLeaveModal()">휴가 관리</button>
 
 <h3>CCTV 근무자 현황</h3>
 <table id="cctvSummary">
   <thead>
     <tr><th>이름</th><th>중대</th><th>생활관</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h3>휴가자 요약</h3>
+<table id="leaveSummary">
+  <thead>
+    <tr><th>이름</th><th>중대</th><th>생활관</th><th>휴가 시작</th><th>휴가 종료</th></tr>
   </thead>
   <tbody></tbody>
 </table>
@@ -48,20 +57,18 @@
 <div id="soldierModal" class="modal">
   <div class="modal-content">
     <h3>용사 신상 관리</h3>
-    중대: <select id="soldierCompany" onchange="onCompanyChange()"><option value="">중대 선택</option></select>
-    생활관: <select id="soldierRoom" disabled><option value="">생활관 선택</option></select>
     <input type="text" id="soldierSearch" placeholder="이름 검색..." oninput="filterSoldiers()">
     <br><br>
     <table id="soldierTable">
       <thead>
-        <tr><th></th><th>이름</th><th>중대</th><th>생활관</th><th>입대</th></tr>
+        <tr><th>삭제</th><th>이름</th><th>중대</th><th>생활관</th><th>입대</th></tr>
       </thead>
       <tbody></tbody>
     </table>
     <button onclick="addSoldierRow()">행 추가</button>
     <button onclick="deleteCheckedSoldiers()">삭제 선택 행</button>
     <button onclick="saveSoldiers()">저장 후 닫기</button>
-    <button onclick="closeModal('soldierModal')">닫기</button>
+    <button onclick="closeSoldierModal()">닫기</button>
   </div>
 </div>
 
@@ -78,10 +85,29 @@
   </div>
 </div>
 
+<!-- 휴가 모달 -->
+<div id="leaveModal" class="modal">
+  <div class="modal-content">
+    <h3>휴가 관리</h3>
+    <table id="leaveTable">
+      <thead>
+        <tr><th>이름</th><th>중대</th><th>생활관</th><th>휴가 시작</th><th>휴가 종료</th><th>삭제</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="addLeaveRow()">행 추가</button>
+    <button onclick="deleteLeaveRows()">삭제 선택 행</button>
+    <button onclick="saveLeave()">저장 후 닫기</button>
+    <button onclick="closeLeaveModal()">닫기</button>
+  </div>
+</div>
+
 <script src="js/main.js"></script>
 <script src="js/cctv.js"></script>
 <script src="js/soldier.js"></script>
 <script src="js/maintenance.js"></script>
+<script src="js/leave.js"></script>
+<script src="js/return.js"></script>
 
 </body>
 </html>
