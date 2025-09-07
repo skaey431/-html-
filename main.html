@@ -48,14 +48,13 @@
 <div id="soldierModal" class="modal">
   <div class="modal-content">
     <h3>용사 신상 관리</h3>
-    <input type="text" id="soldierSearch" placeholder="이름 검색..." oninput="filterSoldiers()">
-    <br><br>
     중대: <select id="soldierCompany" onchange="onCompanyChange()"><option value="">중대 선택</option></select>
     생활관: <select id="soldierRoom" disabled><option value="">생활관 선택</option></select>
+    <input type="text" id="soldierSearch" placeholder="이름 검색..." oninput="filterSoldiers()">
     <br><br>
     <table id="soldierTable">
       <thead>
-        <tr><th>삭제</th><th>이름</th><th>중대</th><th>생활관</th><th>입대</th></tr>
+        <tr><th></th><th>이름</th><th>중대</th><th>생활관</th><th>입대</th></tr>
       </thead>
       <tbody></tbody>
     </table>

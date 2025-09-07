@@ -8,7 +8,6 @@ function openModal(id) {
   if(id === "soldierModal") {
     allSoldiers = JSON.parse(localStorage.getItem(SOLDIER_KEY) || "[]");
     renderSoldiers();
-    updateSoldierSelects();
   }
 }
 
