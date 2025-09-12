@@ -1,15 +1,3 @@
-/* 모달 열기 */
-function openSoldierModal() {
-  document.getElementById("soldierModal").style.display = "flex";
-  allSoldiers = JSON.parse(localStorage.getItem(SOLDIER_KEY) || "[]");
-  renderSoldiers();
-}
-
-/* 모달 닫기 */
-function closeSoldierModal() {
-  document.getElementById("soldierModal").style.display = "none";
-}
-
 /* Soldier 테이블 렌더링 */
 function renderSoldiers() {
   const tbody = document.querySelector("#soldierTable tbody");
@@ -37,7 +25,7 @@ function renderSoldiers() {
     tdName.appendChild(nameInput);
     tr.appendChild(tdName);
 
-    // 생활관 select 미리 만들어둠 (중대 onchange 안에서 접근해야 하므로)
+    // 생활관 select
     const tdBarracks = document.createElement("td");
     const barracksSelect = document.createElement("select");
     barracksSelect.innerHTML = "<option value=''>생활관 선택</option>";
@@ -74,7 +62,7 @@ function renderSoldiers() {
     tdUnit.appendChild(unitSelect);
     tr.appendChild(tdUnit);
 
-    // 기존 데이터 반영 (행 로드 시)
+    // 기존 데이터 반영
     const rooms = maintenanceData.find(c => c.company === s.unit)?.rooms || [];
     rooms.forEach(r => {
       const opt = document.createElement("option");
@@ -131,7 +119,6 @@ function saveSoldiers() {
     });
   });
   localStorage.setItem(SOLDIER_KEY, JSON.stringify(allSoldiers));
-  closeSoldierModal();
   renderCCTV(); // CCTV 현황 업데이트
 }
 
@@ -159,7 +146,13 @@ function updateCCTVNameDisplay(input) {
   }
 }
 
-/* 페이지 로드 시 데이터 */
+/* 페이지 로드 시 데이터 & 이벤트 리스너 등록 */
 document.addEventListener("DOMContentLoaded", () => {
   allSoldiers = JSON.parse(localStorage.getItem(SOLDIER_KEY) || "[]");
+  renderSoldiers();
+
+  document.getElementById("addSoldierBtn").addEventListener("click", addSoldierRow);
+  document.getElementById("deleteSoldierBtn").addEventListener("click", deleteCheckedSoldiers);
+  document.getElementById("saveSoldierBtn").addEventListener("click", saveSoldiers);
+  document.getElementById("soldierSearch").addEventListener("input", filterSoldiers);
 });

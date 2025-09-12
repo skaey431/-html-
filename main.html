@@ -20,10 +20,9 @@
 
 <h2>메인 페이지</h2>
 
-<button onclick="openModal('cctvModal')">CCTV 관리</button>
-<button onclick="openModal('soldierModal')">용사 신상 관리</button>
-<button onclick="openMaintenanceModal()">유지보수 관리</button>
-<button onclick="openLeaveModal()">휴가 관리</button>
+<button id="btnCCTV">CCTV 관리</button>
+<button id="btnMaintenance">유지보수 관리</button>
+<button id="btnLeave">휴가 관리</button>
 
 <h3>CCTV 근무자 현황</h3>
 <table id="cctvSummary">
@@ -52,27 +51,8 @@
         <tr id="nightRow"><td>야간</td></tr>
       </tbody>
     </table>
-    <button onclick="saveCCTV()">저장 후 닫기</button>
-    <button onclick="closeModal('cctvModal')">닫기</button>
-  </div>
-</div>
-
-<!-- Soldier 모달 -->
-<div id="soldierModal" class="modal">
-  <div class="modal-content">
-    <h3>용사 신상 관리</h3>
-    <input type="text" id="soldierSearch" placeholder="이름 검색..." oninput="filterSoldiers()">
-    <br><br>
-    <table id="soldierTable">
-      <thead>
-        <tr><th>삭제</th><th>이름</th><th>중대</th><th>생활관</th><th>입대</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button onclick="addSoldierRow()">행 추가</button>
-    <button onclick="deleteCheckedSoldiers()">삭제 선택 행</button>
-    <button onclick="saveSoldiers()">저장 후 닫기</button>
-    <button onclick="closeSoldierModal()">닫기</button>
+    <button id="btnSaveCCTV">저장 후 닫기</button>
+    <button id="btnCloseCCTV">닫기</button>
   </div>
 </div>
 
@@ -89,19 +69,24 @@
     <div id="tab-company" class="tab-content active">
       <table id="maintenanceTable">
         <tbody></tbody>
-      </table>
-      <button onclick="addCompany()">중대 추가</button>
-      <button onclick="saveMaintenance()">저장 후 닫기</button>
+      </table>                                                              
+      <button id="btnAddCompany">중대 추가</button>
+      <button id="btnSaveMaintenance">저장 후 닫기</button>
     </div>
 
     <div id="tab-soldier" class="tab-content">
-      <table id="maintenanceSoldierTable">
-        <thead><tr><th>삭제</th><th>이름</th><th>중대</th><th>생활관</th><th>입대</th></tr></thead>
+      <h3>용사 신상 관리</h3>
+      <input type="text" id="soldierSearch" placeholder="이름 검색...">
+      <br><br>
+      <table id="soldierTable">
+        <thead>
+          <tr><th>삭제</th><th>이름</th><th>중대</th><th>생활관</th><th>입대</th></tr>
+        </thead>
         <tbody></tbody>
       </table>
-      <button onclick="addSoldierRow()">행 추가</button>
-      <button onclick="deleteCheckedSoldiers()">삭제 선택 행</button>
-      <button onclick="saveSoldiers()">저장</button>
+      <button id="addSoldierBtn">행 추가</button>
+      <button id="deleteSoldierBtn">삭제 선택 행</button>
+      <button id="saveSoldierBtn">저장</button>
     </div>
 
     <div id="tab-exemption" class="tab-content">
@@ -109,12 +94,12 @@
         <thead><tr><th>삭제</th><th>이름</th><th>사유</th></tr></thead>
         <tbody></tbody>
       </table>
-      <button onclick="addExemptionRow()">행 추가</button>
-      <button onclick="deleteExemptionRows()">삭제 선택 행</button>
-      <button onclick="saveExemptions()">저장</button>
+      <button id="btnAddExemption">행 추가</button>
+      <button id="btnDeleteExemption">삭제 선택 행</button>
+      <button id="btnSaveExemption">저장</button>
     </div>
 
-    <button onclick="closeModal('maintenanceModal')">닫기</button>
+    <button id="btnCloseMaintenance">닫기</button>
   </div>
 </div>
 
@@ -128,10 +113,10 @@
       </thead>
       <tbody></tbody>
     </table>
-    <button onclick="addLeaveRow()">행 추가</button>
-    <button onclick="deleteLeaveRows()">삭제 선택 행</button>
-    <button onclick="saveLeave()">저장 후 닫기</button>
-    <button onclick="closeLeaveModal()">닫기</button>
+    <button id="btnAddLeave">행 추가</button>
+    <button id="btnDeleteLeave">삭제 선택 행</button>
+    <button id="btnSaveLeave">저장 후 닫기</button>
+    <button id="btnCloseLeave">닫기</button>
   </div>
 </div>
 
@@ -140,18 +125,44 @@
 <script src="js/soldier.js"></script>
 <script src="js/co.js"></script>
 <script src="js/leave.js"></script>
+<script src="js/maintenance.js"></script>
 <script src="js/return.js"></script>
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
   // 탭 전환
   document.querySelectorAll("#tabs .tab").forEach(tab => {
-    tab.onclick = () => {
+    tab.addEventListener("click", () => {
       document.querySelectorAll("#tabs .tab").forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove('active'));
       document.getElementById(tab.dataset.tab).classList.add('active');
-    }
+    });
   });
+
+  // CCTV 모달
+  document.getElementById("btnCCTV").addEventListener("click", () => openModal("cctvModal"));
+  document.getElementById("btnSaveCCTV").addEventListener("click", saveCCTV);
+  document.getElementById("btnCloseCCTV").addEventListener("click", () => closeModal("cctvModal"));
+
+  // 유지보수 모달
+  document.getElementById("btnMaintenance").addEventListener("click", openMaintenanceModal);
+  document.getElementById("btnAddCompany").addEventListener("click", addCompany);
+  document.getElementById("btnSaveMaintenance").addEventListener("click", saveMaintenance);
+  document.getElementById("btnCloseMaintenance").addEventListener("click", () => closeModal("maintenanceModal"));
+
+  // 열외 관리
+  document.getElementById("btnAddExemption").addEventListener("click", addExemptionRow);
+  document.getElementById("btnDeleteExemption").addEventListener("click", deleteExemptionRows);
+  document.getElementById("btnSaveExemption").addEventListener("click", saveExemptions);
+
+  // 휴가 모달
+  document.getElementById("btnLeave").addEventListener("click", openLeaveModal);
+  document.getElementById("btnAddLeave").addEventListener("click", addLeaveRow);
+  document.getElementById("btnDeleteLeave").addEventListener("click", deleteLeaveRows);
+  document.getElementById("btnSaveLeave").addEventListener("click", saveLeave);
+  document.getElementById("btnCloseLeave").addEventListener("click", closeLeaveModal);
+});
 </script>
 
 </body>
