@@ -18,38 +18,33 @@ function renderLeaves() {
   const tbody = document.querySelector("#leaveTable tbody");
   tbody.innerHTML = "";
 
+  const maintenanceData = JSON.parse(localStorage.getItem("maintenanceData") || "[]");
   const soldiers = JSON.parse(localStorage.getItem("soldierData") || "[]");
 
   allLeaves.forEach((leave, idx) => {
     const tr = document.createElement("tr");
 
-    // 이름 select
+    // 이름 input
     const tdName = document.createElement("td");
-    const nameSelect = document.createElement("select");
-    nameSelect.innerHTML = "<option value=''>이름 선택</option>";
-    soldiers.forEach(s => {
-      const opt = document.createElement("option");
-      opt.value = s.name;
-      opt.textContent = s.name;
-      if (s.name === leave.name) opt.selected = true;
-      nameSelect.appendChild(opt);
-    });
-    nameSelect.onchange = () => {
-      const sel = soldiers.find(s => s.name === nameSelect.value);
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = leave.name || "";
+    nameInput.oninput = () => {
+      leave.name = nameInput.value;
+      const sel = soldiers.find(s => s.name === nameInput.value);
       if (sel) {
-        tr.querySelector(".unitSelect").value = sel.unit;
-        tr.querySelector(".barracksSelect").value = sel.barracks;
+        leave.unit = sel.unit;
+        leave.barracks = sel.barracks;
+        renderLeaves(); // 자동 갱신
       }
     };
-    tdName.appendChild(nameSelect);
+    tdName.appendChild(nameInput);
     tr.appendChild(tdName);
 
-    // 중대
+    // 중대 select
     const tdUnit = document.createElement("td");
     const unitSelect = document.createElement("select");
-    unitSelect.className = "unitSelect";
     unitSelect.innerHTML = "<option value=''>중대 선택</option>";
-    const maintenanceData = JSON.parse(localStorage.getItem("maintenanceData") || "[]");
     maintenanceData.forEach(comp => {
       const opt = document.createElement("option");
       opt.value = comp.company;
@@ -58,34 +53,32 @@ function renderLeaves() {
       unitSelect.appendChild(opt);
     });
     unitSelect.onchange = () => {
-      const comp = maintenanceData.find(c => c.company === unitSelect.value);
-      const barracksSelect = tr.querySelector(".barracksSelect");
-      barracksSelect.innerHTML = "<option value=''>생활관 선택</option>";
+      leave.unit = unitSelect.value;
+      leave.barracks = "";
+      renderLeaves();
+    };
+    tdUnit.appendChild(unitSelect);
+    tr.appendChild(tdUnit);
+
+    // 생활관 select
+    const tdBarracks = document.createElement("td");
+    const barracksSelect = document.createElement("select");
+    barracksSelect.innerHTML = "<option value=''>생활관 선택</option>";
+    if (leave.unit) {
+      const comp = maintenanceData.find(c => c.company === leave.unit);
       if (comp) {
         comp.rooms.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r;
           opt.textContent = r;
+          if (r === leave.barracks) opt.selected = true;
           barracksSelect.appendChild(opt);
         });
       }
+    }
+    barracksSelect.onchange = () => {
+      leave.barracks = barracksSelect.value;
     };
-    tdUnit.appendChild(unitSelect);
-    tr.appendChild(tdUnit);
-
-    // 생활관
-    const tdBarracks = document.createElement("td");
-    const barracksSelect = document.createElement("select");
-    barracksSelect.className = "barracksSelect";
-    barracksSelect.innerHTML = "<option value=''>생활관 선택</option>";
-    const rooms = maintenanceData.find(c => c.company === leave.unit)?.rooms || [];
-    rooms.forEach(r => {
-      const opt = document.createElement("option");
-      opt.value = r;
-      opt.textContent = r;
-      if (r === leave.barracks) opt.selected = true;
-      barracksSelect.appendChild(opt);
-    });
     tdBarracks.appendChild(barracksSelect);
     tr.appendChild(tdBarracks);
 
@@ -94,6 +87,7 @@ function renderLeaves() {
     const startInput = document.createElement("input");
     startInput.type = "date";
     startInput.value = leave.startDate || "";
+    startInput.oninput = () => leave.startDate = startInput.value;
     tdStart.appendChild(startInput);
     tr.appendChild(tdStart);
 
@@ -102,10 +96,11 @@ function renderLeaves() {
     const endInput = document.createElement("input");
     endInput.type = "date";
     endInput.value = leave.endDate || "";
+    endInput.oninput = () => leave.endDate = endInput.value;
     tdEnd.appendChild(endInput);
     tr.appendChild(tdEnd);
 
-    // 삭제 버튼
+    // 삭제 체크박스
     const tdDel = document.createElement("td");
     const delCheckbox = document.createElement("input");
     delCheckbox.type = "checkbox";
@@ -121,20 +116,6 @@ function renderLeaves() {
 
 /* 행 추가 */
 function addLeaveRow() {
-  // 기존 입력값 반영
-  const rows = document.querySelectorAll("#leaveTable tbody tr");
-  rows.forEach((row, idx) => {
-    const inputs = row.querySelectorAll("select, input[type=date]");
-    allLeaves[idx] = {
-      name: inputs[0].value,
-      unit: inputs[1].value,
-      barracks: inputs[2].value,
-      startDate: inputs[3].value,
-      endDate: inputs[4].value
-    };
-  });
-
-  // 새 행 추가
   allLeaves.push({ name: "", unit: "", barracks: "", startDate: "", endDate: "" });
   renderLeaves();
 }
@@ -142,31 +123,17 @@ function addLeaveRow() {
 /* 체크된 행 삭제 */
 function deleteLeaveRows() {
   if (!confirm("선택된 행을 삭제하시겠습니까?")) return;
-  const tbody = document.querySelector("#leaveTable tbody");
-  const rows = Array.from(tbody.querySelectorAll("tr"));
-  rows.forEach((row, idx) => {
+  allLeaves = allLeaves.filter((_, idx) => {
+    const tbody = document.querySelector("#leaveTable tbody");
+    const row = tbody.children[idx];
     const cb = row.querySelector(".deleteLeaveCheckbox");
-    if (cb && cb.checked) {
-      allLeaves.splice(idx, 1);
-    }
+    return !(cb && cb.checked);
   });
   renderLeaves();
 }
 
 /* 저장 */
 function saveLeave() {
-  const rows = document.querySelectorAll("#leaveTable tbody tr");
-  allLeaves = [];
-  rows.forEach(row => {
-    const inputs = row.querySelectorAll("select, input[type=date]");
-    allLeaves.push({
-      name: inputs[0].value,
-      unit: inputs[1].value,
-      barracks: inputs[2].value,
-      startDate: inputs[3].value,
-      endDate: inputs[4].value
-    });
-  });
   localStorage.setItem(LEAVE_KEY, JSON.stringify(allLeaves));
   closeLeaveModal();
   renderLeaveSummary();
