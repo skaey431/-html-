@@ -46,22 +46,47 @@ function renderLeaves() {
 
     // 중대
     const tdUnit = document.createElement("td");
-    const unitInput = document.createElement("input");
-    unitInput.type = "text";
-    unitInput.value = leave.unit || "";
-    unitInput.className = "unitSelect";
-    unitInput.readOnly = true;
-    tdUnit.appendChild(unitInput);
+    const unitSelect = document.createElement("select");
+    unitSelect.className = "unitSelect";
+    unitSelect.innerHTML = "<option value=''>중대 선택</option>";
+    const maintenanceData = JSON.parse(localStorage.getItem("maintenanceData") || "[]");
+    maintenanceData.forEach(comp => {
+      const opt = document.createElement("option");
+      opt.value = comp.company;
+      opt.textContent = comp.company;
+      if (comp.company === leave.unit) opt.selected = true;
+      unitSelect.appendChild(opt);
+    });
+    unitSelect.onchange = () => {
+      const comp = maintenanceData.find(c => c.company === unitSelect.value);
+      const barracksSelect = tr.querySelector(".barracksSelect");
+      barracksSelect.innerHTML = "<option value=''>생활관 선택</option>";
+      if (comp) {
+        comp.rooms.forEach(r => {
+          const opt = document.createElement("option");
+          opt.value = r;
+          opt.textContent = r;
+          barracksSelect.appendChild(opt);
+        });
+      }
+    };
+    tdUnit.appendChild(unitSelect);
     tr.appendChild(tdUnit);
 
     // 생활관
     const tdBarracks = document.createElement("td");
-    const barracksInput = document.createElement("input");
-    barracksInput.type = "text";
-    barracksInput.value = leave.barracks || "";
-    barracksInput.className = "barracksSelect";
-    barracksInput.readOnly = true;
-    tdBarracks.appendChild(barracksInput);
+    const barracksSelect = document.createElement("select");
+    barracksSelect.className = "barracksSelect";
+    barracksSelect.innerHTML = "<option value=''>생활관 선택</option>";
+    const rooms = maintenanceData.find(c => c.company === leave.unit)?.rooms || [];
+    rooms.forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r;
+      opt.textContent = r;
+      if (r === leave.barracks) opt.selected = true;
+      barracksSelect.appendChild(opt);
+    });
+    tdBarracks.appendChild(barracksSelect);
     tr.appendChild(tdBarracks);
 
     // 휴가 시작
@@ -96,6 +121,20 @@ function renderLeaves() {
 
 /* 행 추가 */
 function addLeaveRow() {
+  // 기존 입력값 반영
+  const rows = document.querySelectorAll("#leaveTable tbody tr");
+  rows.forEach((row, idx) => {
+    const inputs = row.querySelectorAll("select, input[type=date]");
+    allLeaves[idx] = {
+      name: inputs[0].value,
+      unit: inputs[1].value,
+      barracks: inputs[2].value,
+      startDate: inputs[3].value,
+      endDate: inputs[4].value
+    };
+  });
+
+  // 새 행 추가
   allLeaves.push({ name: "", unit: "", barracks: "", startDate: "", endDate: "" });
   renderLeaves();
 }
@@ -119,7 +158,7 @@ function saveLeave() {
   const rows = document.querySelectorAll("#leaveTable tbody tr");
   allLeaves = [];
   rows.forEach(row => {
-    const inputs = row.querySelectorAll("select, input[type=text], input[type=date]");
+    const inputs = row.querySelectorAll("select, input[type=date]");
     allLeaves.push({
       name: inputs[0].value,
       unit: inputs[1].value,
@@ -156,4 +195,8 @@ function renderLeaveSummary() {
 document.addEventListener("DOMContentLoaded", () => {
   allLeaves = JSON.parse(localStorage.getItem(LEAVE_KEY) || "[]");
   renderLeaveSummary();
+
+  document.getElementById("btnAddLeave").addEventListener("click", addLeaveRow);
+  document.getElementById("btnDeleteLeave").addEventListener("click", deleteLeaveRows);
+  document.getElementById("btnSaveLeave").addEventListener("click", saveLeave);
 });
