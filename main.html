@@ -3,58 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <title>메인 페이지</title>
-<style>
-  table, th, td { border:1px solid black; border-collapse: collapse; padding:5px; text-align:center; }
-  th { background:#eee; cursor:pointer; }
-  button { margin:5px; }
-  .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:flex-start; padding-top:50px; overflow:auto; }
-  .modal-content { background:white; padding:20px; border-radius:5px; max-height:90%; overflow-y:auto; min-width:700px; }
-  .unitDisplay, .barracksDisplay { display:block; margin-top:3px; font-weight:bold; }
-  .tab { display:inline-block; margin-right:5px; padding:5px; background:#ddd; cursor:pointer; border-radius:3px; }
-  .tab.active { background:#bbb; font-weight:bold; }
-  .tab-content { display:none; margin-top:10px; }
-  .tab-content.active { display:block; }
-</style>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <h2>메인 페이지</h2>
 
-<button id="btnCCTV">CCTV 관리</button>
 <button id="btnMaintenance">유지보수 관리</button>
 <button id="btnLeave">휴가 관리</button>
 
-<h3>CCTV 근무자 현황</h3>
-<table id="cctvSummary">
+<h3>생활관 요약</h3>
+<table id="barracksSummary">
   <thead>
-    <tr><th>이름</th><th>중대</th><th>생활관</th></tr>
+    <tr><th>생활관</th><th>근무자</th><th>휴가자</th></tr>
   </thead>
   <tbody></tbody>
 </table>
-
-<h3>휴가자 요약</h3>
-<table id="leaveSummary">
-  <thead>
-    <tr><th>이름</th><th>중대</th><th>생활관</th><th>휴가 시작</th><th>휴가 종료</th></tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<!-- CCTV 모달 -->
-<div id="cctvModal" class="modal">
-  <div class="modal-content">
-    <h3>CCTV 관리</h3>
-    <table id="cctvTable">
-      <thead><tr><th>구분</th><th colspan="4">칸</th></tr></thead>
-      <tbody>
-        <tr id="dayRow"><td>주간</td></tr>
-        <tr id="nightRow"><td>야간</td></tr>
-      </tbody>
-    </table>
-    <button id="btnSaveCCTV">저장 후 닫기</button>
-    <button id="btnCloseCCTV">닫기</button>
-  </div>
-</div>
 
 <!-- 유지보수 모달 -->
 <div id="maintenanceModal" class="modal">
@@ -71,7 +35,7 @@
         <tbody></tbody>
       </table>                                                              
       <button id="btnAddCompany">중대 추가</button>
-      <button id="btnSaveMaintenance">저장 후 닫기</button>
+      <button id="btnSaveMaintenance">저장</button>
     </div>
 
     <div id="tab-soldier" class="tab-content">
@@ -119,9 +83,27 @@
     <button id="btnCloseLeave">닫기</button>
   </div>
 </div>
+<!-- 총기함 관리 모달 -->
+<div id="armoryModal" class="modal">
+  <div class="modal-content">
+    <h3>생활관 총기함</h3>
+    <table id="armoryRoomsTable">
+      <thead><tr><th>생활관</th><th>총기함</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3>생활관 외</h3>
+    <table id="armorySpecialTable">
+      <thead><tr><th>생활관 외</th><th>총기함</th><th>삭제</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="saveArmory()">저장</button>
+    <button onclick="document.getElementById('armoryModal').style.display='none'">닫기</button>
+  </div>
+</div>
+
 
 <script src="js/main.js"></script>
-<script src="js/cctv.js"></script>
 <script src="js/soldier.js"></script>
 <script src="js/co.js"></script>
 <script src="js/leave.js"></script>
@@ -139,13 +121,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // CCTV 모달
-  document.getElementById("btnCCTV").addEventListener("click", () => openModal("cctvModal"));
-  document.getElementById("btnSaveCCTV").addEventListener("click", saveCCTV);
-  document.getElementById("btnCloseCCTV").addEventListener("click", () => closeModal("cctvModal"));
-
   // 유지보수 모달
-  document.getElementById("btnMaintenance").addEventListener("click", openMaintenanceModal);
+  document.getElementById("btnMaintenance").addEventListener("click", () => openModal("maintenanceModal"));
   document.getElementById("btnAddCompany").addEventListener("click", addCompany);
   document.getElementById("btnSaveMaintenance").addEventListener("click", saveMaintenance);
   document.getElementById("btnCloseMaintenance").addEventListener("click", () => closeModal("maintenanceModal"));

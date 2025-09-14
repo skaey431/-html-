@@ -1,44 +1,33 @@
-// 유지보수 모달 관련 (중대/생활관 관리는 co.js로 분리)
-
-// Exemption 탭 관련
-const EXEMPTION_KEY = "exemptionData";
-let exemptionData = JSON.parse(localStorage.getItem(EXEMPTION_KEY) || '[]');
-
-function renderExemptions() {
-  const tbody = document.querySelector("#exemptionTable tbody");
-  tbody.innerHTML = '';
-
-  exemptionData.forEach((ex, idx) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="checkbox" data-idx="${idx}"></td>
-      <td><input type="text" value="${ex.name}" oninput="updateExemption(${idx}, 'name', this)"></td>
-      <td><input type="text" value="${ex.reason}" oninput="updateExemption(${idx}, 'reason', this)"></td>
-    `;
-    tbody.appendChild(tr);
-  });
+// 유지보수 모달 열기
+function openMaintenanceModal() {
+  document.getElementById("maintenanceModal").style.display = "flex";
+  loadCompanies(); // co.js 함수
+  renderSoldiers(); // soldier.js 함수
+  renderExemptions(); // exemption 관리 함수
 }
 
-function addExemptionRow() {
-  exemptionData.push({ name:'', reason:'' });
-  renderExemptions();
+// 유지보수 모달 닫기
+function closeMaintenanceModal() {
+  document.getElementById("maintenanceModal").style.display = "none";
 }
 
-function deleteExemptionRows() {
-  const checkboxes = document.querySelectorAll("#exemptionTable tbody input[type=checkbox]:checked");
-  const idxs = Array.from(checkboxes).map(cb => parseInt(cb.dataset.idx));
-  exemptionData = exemptionData.filter((_, i) => !idxs.includes(i));
-  renderExemptions();
+// 저장 버튼 → co.js / soldier.js / exemption 각각 저장 호출
+function saveMaintenance() {
+  saveCompanies(); 
+  saveSoldiers();
+  saveExemptions();
+  closeMaintenanceModal();
 }
 
-function updateExemption(idx, field, input) {
-  exemptionData[idx][field] = input.value.trim();
-}
-
-function saveExemptions() {
-  localStorage.setItem(EXEMPTION_KEY, JSON.stringify(exemptionData));
-}
-
+// 탭 전환 (main.html script에 있던 거 옮김)
 document.addEventListener("DOMContentLoaded", () => {
-  renderExemptions();
+  document.querySelectorAll("#tabs .tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#tabs .tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+      document.getElementById(tab.dataset.tab).classList.add("active");
+    });
+  });
 });
