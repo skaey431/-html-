@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>5mock</title>
+<style>
+    body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-align: center;
+  background-color: #e0e0e0;
+  margin: 0;
+  padding: 0;
+}
+
+canvas#board {
+  border: 2px solid #333;
+  background-color: #f5deb3;
+  margin-top: 20px;
+  box-shadow: 4px 4px 10px rgba(0,0,0,0.2);
+  cursor: pointer;
+  /* transform 효과 제거 */
+}
+
+button, select {
+  font-size: 16px;
+  padding: 6px 12px;
+  margin: 5px;
+  border-radius: 5px;
+  border: 1px solid #666;
+  background-color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button:hover, select:hover {
+  background-color: #f0f0f0;
+  /* transform 확대 제거 */
+}
+
+#status {
+  font-size: 18px;
+  margin-top: 15px;
+  min-height: 24px;
+  color: #333;
+  font-weight: bold;
+}
+
+#status.turn {
+  color: #1a73e8;
+  font-size: 20px;
+  transition: color 0.3s ease;
+}
+
+@keyframes highlight {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+</style>
+</head>
+<body>
+<h1>5mock</h1>
+
+<label>플레이어 돌:
+  <select id="playerSelect">
+    <option value="1">흑</option>
+    <option value="2">백</option>
+  </select>
+</label>
+
+<label>난이도:
+  <select id="difficulty">
+    <option value="1">쉬움</option>
+    <option value="2">보통</option>
+    <option value="3">어려움</option>
+  </select>
+</label>
+
+<button id="newGame">새 게임</button>
+<button id="undo">무르기</button>
+<div id="status">게임 상태 표시</div>
+
+<canvas id="board" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const statusDiv = document.getElementById('status');
+
+const size = 15;
+const cellSize = canvas.width / size;
+
+let board, currentPlayer, gameOver;
+let playerStone = 1, aiStone = 2;
+let aiEnabled = true;
+let lastAIMove = null;
+let history = [];
+let turnCount = 0;
+
+let difficulty = 2;
+let depthMap = {1:1, 2:2, 3:3};
+let attackWeightMap = {1:1, 2:1, 3:2};
+
+// --- 초기화 ---
+function initBoard() {
+  board = Array.from({ length: size }, () => Array(size).fill(0));
+  history = [];
+  lastAIMove = null;
+  currentPlayer = 1;
+  gameOver = false;
+  turnCount = 0;
+  drawBoard();
+  updateStatus("턴 0: 게임 시작");
+
+  if (aiEnabled && playerStone === 2 && currentPlayer === aiStone) {
+    setTimeout(aiMove, 300);
+  }
+}
+
+// --- 보드 그리기 ---
+function drawBoard() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "black";
+  for (let i = 0; i < size; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cellSize/2, cellSize/2 + i*cellSize);
+    ctx.lineTo(canvas.width-cellSize/2, cellSize/2 + i*cellSize);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cellSize/2 + i*cellSize, cellSize/2);
+    ctx.lineTo(cellSize/2 + i*cellSize, canvas.height-cellSize/2);
+    ctx.stroke();
+  }
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (board[r][c] !== 0) drawStone(r, c, board[r][c]);
+    }
+  }
+}
+
+function drawStone(r, c, player) {
+  ctx.beginPath();
+  ctx.arc(c*cellSize + cellSize/2, r*cellSize + cellSize/2, cellSize/2.5, 0, Math.PI*2);
+  ctx.fillStyle = player === 1 ? "black" : "white";
+  ctx.fill();
+  ctx.stroke();
+
+  if (lastAIMove && lastAIMove[0] === r && lastAIMove[1] === c) {
+    ctx.beginPath();
+    ctx.arc(c*cellSize + cellSize/2, r*cellSize + cellSize/2, cellSize/2.2, 0, Math.PI*2);
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "black";
+  }
+}
+
+// --- 상태 표시 ---
+function updateStatus(msg) { 
+  statusDiv.textContent = msg; 
+  statusDiv.classList.add('turn');
+  setTimeout(()=>statusDiv.classList.remove('turn'), 500);
+}
+
+// --- 클릭 이벤트 ---
+canvas.addEventListener('click', (e) => {
+  if (gameOver && currentPlayer !== playerStone) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const c = Math.floor(x / cellSize);
+  const r = Math.floor(y / cellSize);
+  if (board[r][c] === 0) placeStone(r, c, currentPlayer);
+});
+
+// --- 돌 놓기 ---
+function placeStone(r, c, player) {
+  board[r][c] = player;
+  history.push({r, c, player});
+  turnCount++;
+
+  if (player === aiStone) lastAIMove = [r, c];
+
+  drawBoard();
+
+  if (checkWin(r, c, player)) {
+    updateStatus(`턴 ${turnCount}: ${(player === 1 ? "흑" : "백")} 승리!`);
+    gameOver = true;
+  } else {
+    currentPlayer = (player === 1 ? 2 : 1);
+    updateStatus(`턴 ${turnCount}: ${(currentPlayer === 1 ? "흑" : "백")} 차례`);
+  }
+
+  if (!gameOver && currentPlayer === aiStone && aiEnabled) setTimeout(aiMove, 200);
+}
+
+// --- 승리 체크 ---
+function checkWin(r, c, player) {
+  const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+  for (let [dr, dc] of dirs) {
+    let count = 1;
+    for (let d = -1; d <= 1; d += 2) {
+      let nr = r + dr*d, nc = c + dc*d;
+      while (nr >= 0 && nr < size && nc >= 0 && nc < size && board[nr][nc] === player) {
+        count++; nr += dr*d; nc += dc*d;
+      }
+    }
+    if (count >= 5) return true;
+  }
+  return false;
+}
+
+// --- AI 관련 함수 ---
+// 후보 수 생성
+function generateMoves(){
+  const moves=[];
+  const dist=2;
+  for(let r=0;r<size;r++)
+    for(let c=0;c<size;c++)
+      if(board[r][c]===0 && hasNeighbor(r,c,dist)) moves.push([r,c]);
+  if(moves.length===0) moves.push([Math.floor(size/2),Math.floor(size/2)]);
+  const mid=Math.floor(size/2);
+  moves.sort((a,b)=>(Math.abs(a[0]-mid)+Math.abs(a[1]-mid))-(Math.abs(b[0]-mid)+Math.abs(b[1]-mid)));
+  return moves;
+}
+
+function hasNeighbor(r,c,d){
+  for(let dr=-d;dr<=d;dr++)
+    for(let dc=-d;dc<=d;dc++)
+      if(!(dr===0 && dc===0)){
+        const nr=r+dr,nc=c+dc;
+        if(nr>=0&&nr<size&&nc>=0&&nc<size&&board[nr][nc]!==0) return true;
+      }
+  return false;
+}
+
+// 점수 평가
+function patternScore(r,c,player,weight=1){
+  const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+  let score=0;
+  for(const [dr,dc] of dirs){
+    let count=1,openEnds=0;
+    let nr=r+dr,nc=c+dc;
+    while(nr>=0&&nr<size&&nc>=0&&nc<size&&board[nr][nc]===player){count++; nr+=dr; nc+=dc;}
+    if(nr>=0&&nr<size&&nc>=0&&nc<size&&board[nr][nc]===0) openEnds++;
+    nr=r-dr; nc=c-dc;
+    while(nr>=0&&nr<size&&nc>=0&&nc<size&&board[nr][nc]===player){count++; nr-=dr; nc-=dc;}
+    if(nr>=0&&nr<size&&nc>=0&&nc<size&&board[nr][nc]===0) openEnds++;
+    if(count>=5) score+=100000*weight;
+    else if(count===4&&openEnds>0) score+=10000*weight;
+    else if(count===3&&openEnds===2) score+=500*weight;
+    else if(count===3&&openEnds===1) score+=200*weight;
+  }
+  return score;
+}
+
+function evaluateBoard(board, aiPlayer, weight=1){
+  let score=0;
+  const opponent = aiPlayer===1?2:1;
+  for(let r=0;r<size;r++)
+    for(let c=0;c<size;c++){
+      if(board[r][c]===aiPlayer) score+=patternScore(r,c,aiPlayer,weight);
+      else if(board[r][c]===opponent) score-=patternScore(r,c,opponent);
+    }
+  return score;
+}
+
+// 미니맥스
+function minimax(board, depth, alpha, beta, maximizing, weight=1){
+  const moves=generateMoves();
+  let bestMove=null;
+  if(depth===0) return {score:evaluateBoard(board,aiStone,weight)};
+  if(maximizing){
+    let maxEval=-Infinity;
+    for(const [r,c] of moves){
+      board[r][c]=aiStone;
+      if(checkWin(r,c,aiStone)){board[r][c]=0; return {score:1000000, move:[r,c]};}
+      let eval=minimax(board,depth-1,alpha,beta,false,weight).score;
+      board[r][c]=0;
+      if(eval>maxEval){maxEval=eval; bestMove=[r,c];}
+      alpha=Math.max(alpha,eval);
+      if(beta<=alpha) break;
+    }
+    return {score:maxEval, move:bestMove};
+  } else {
+    let minEval=Infinity;
+    for(const [r,c] of moves){
+      board[r][c]=playerStone;
+      if(checkWin(r,c,playerStone)){board[r][c]=0; return {score:-1000000, move:[r,c]};}
+      let eval=minimax(board,depth-1,alpha,beta,true,weight).score;
+      board[r][c]=0;
+      if(eval<minEval){minEval=eval; bestMove=[r,c];}
+      beta=Math.min(beta,eval);
+      if(beta<=alpha) break;
+    }
+    return {score:minEval, move:bestMove};
+  }
+}
+
+// 즉시 승리/차단
+function findImmediateThreat(player){
+  for(let r=0;r<size;r++)
+    for(let c=0;c<size;c++)
+      if(board[r][c]===0){
+        board[r][c]=player;
+        if(checkWin(r,c,player)){board[r][c]=0; return [r,c];}
+        board[r][c]=0;
+      }
+  return null;
+}
+
+function findOpenFour(opponent){
+  for(let r=0;r<size;r++)
+    for(let c=0;c<size;c++)
+      if(board[r][c]===0){
+        board[r][c]=opponent;
+        const score=patternScore(r,c,opponent);
+        board[r][c]=0;
+        if(score>=10000) return [r,c];
+      }
+  return null;
+}
+
+// AI 실행
+function aiMove() {
+  const depth = depthMap[difficulty];
+  const attackWeight = attackWeightMap[difficulty];
+
+  const winMove = findImmediateThreat(aiStone);
+  if (winMove) { placeStone(winMove[0], winMove[1], aiStone); return; }
+
+  const open4Move = findOpenFour(playerStone);
+  if (open4Move) { placeStone(open4Move[0], open4Move[1], aiStone); return; }
+
+  const blockMove = findImmediateThreat(playerStone);
+  if (blockMove) { placeStone(blockMove[0], blockMove[1], aiStone); return; }
+
+  const best = minimax(board, depth, -Infinity, Infinity, true, attackWeight);
+  if (best.move) placeStone(best.move[0], best.move[1], aiStone);
+}
+
+// --- 무르기 ---
+document.getElementById("undo").addEventListener("click",()=>{
+  if(history.length===0) return;
+
+  let lastMove=history.pop();
+  board[lastMove.r][lastMove.c]=0;
+  turnCount--;
+
+  if(lastMove.player===aiStone && history.length>0){
+    let prev=history[history.length-1];
+    if(prev.player===playerStone){ 
+      board[prev.r][prev.c]=0; 
+      history.pop(); 
+      turnCount--; 
+    }
+  }
+
+  const lastAI = history.slice().reverse().find(h=>h.player===aiStone);
+  lastAIMove = lastAI ? [lastAI.r,lastAI.c] : null;
+
+  currentPlayer = playerStone;
+  gameOver = false;
+  drawBoard();
+  updateStatus(`턴 ${turnCount}: 무르기 완료, 플레이어 차례`);
+});
+
+// --- 옵션 이벤트 ---
+document.getElementById("playerSelect").addEventListener("change",(e)=>{
+  playerStone=parseInt(e.target.value);
+  aiStone=(playerStone===1?2:1);
+  initBoard();
+});
+document.getElementById("difficulty").addEventListener("change",(e)=>{
+  difficulty=parseInt(e.target.value);
+});
+document.getElementById("newGame").addEventListener("click",initBoard);
+
+// --- 시작 ---
+initBoard();
+</script>
+</body>
+</html>
