@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>야흐트 게임</title>
+<style>
+body {
+  font-family: '맑은 고딕', Malgun Gothic, Arial, sans-serif;
+  background: #f0f4f8;
+  color: #333;
+  padding: 20px;
+  max-width: 1200px;
+  margin: auto;
+  overflow-x: hidden;
+}
+
+#game-container {
+  display: flex;
+  gap: 20px;
+  min-height: 600px;
+  overflow-x: hidden;
+}
+
+#game-area {
+  flex: 1 1 350px;
+  background: white;
+  padding: 20px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#scoreboard {
+  flex: 2 1 700px;
+  background: white;
+  padding: 20px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+h1 {
+  text-align: center;
+  color: #064663;
+  margin-bottom: 20px;
+}
+
+#player-selection {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+#player-selection button {
+  background-color: #2a9d8f;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  margin: 0 8px;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#player-selection button:hover {
+  background-color: #21867a;
+}
+
+#current-player {
+  color: #2a9d8f;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+#dice-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: nowrap;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.dice {
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: 10vw;
+  max-width: 50px;
+  min-width: 40px;
+  height: 50px;
+  line-height: 50px;
+  border: 2px solid #2a9d8f;
+  border-radius: 8px;
+  font-size: 26px;
+  font-weight: 700;
+  background: #caf0f8;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.25s, border-color 0.25s;
+  text-align: center;
+}
+
+.dice.selected {
+  background-color: #2a9d8f;
+  color: white;
+  border-color: #1b6770;
+}
+
+.dice:hover:not(.selected) {
+  background-color: #ade8f4;
+}
+
+#roll-button {
+  margin: 25px auto 0 auto;
+  padding: 12px 30px;
+  font-size: 20px;
+  background-color: #264653;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  display: block;
+}
+
+#roll-button:disabled {
+  background-color: #94a7b9;
+  cursor: not-allowed;
+}
+
+#roll-button:hover:not(:disabled) {
+  background-color: #1b3940;
+}
+
+#roll-count {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 5px;
+  color: #264653;
+}
+
+th, td {
+  border: 1px solid #b2bec3;
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 16px;
+}
+
+thead th {
+  background-color: #0984e3;
+  color: white;
+  font-weight: 700;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #dfe6e9;
+}
+
+tbody tr:hover {
+  background-color: #b2bec3;
+}
+
+td.selectable {
+  background-color: #74b9ff;
+  color: #2d3436;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+td.selectable:hover {
+  background-color: #0984e3;
+  color: white;
+}
+
+td.taken {
+  background-color: #636e72;
+  color: #dfe6e9;
+  cursor: default;
+}
+
+tfoot th {
+  background-color: #00b894;
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+tfoot td {
+  background-color: #55efc4;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+@media (max-width: 900px) {
+  #game-container {
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+  #scoreboard {
+    width: 100%;
+    max-height: none;
+    margin-top: 20px;
+    overflow-x: auto;
+    min-width: auto;
+  }
+  #game-area {
+    width: 100%;
+    min-width: auto;
+    overflow-x: hidden;
+    margin-bottom: 20px;
+  }
+  #dice-container {
+    justify-content: flex-start;
+    overflow-x: hidden;
+  }
+  .dice {
+    width: 50px;
+    min-width: 50px;
+  }
+}
+</style>
+</head>
+<body>
+
+<h1>야흐트 게임</h1>
+
+<div id="player-selection">
+  <h3>플레이어 수 선택</h3>
+  <button onclick="startGame(1)">1명</button>
+  <button onclick="startGame(2)">2명</button>
+  <button onclick="startGame(3)">3명</button>
+  <button onclick="startGame(4)">4명</button>
+</div>
+
+<div id="game-container" style="display:none;">
+  <div id="game-area">
+    <h3>현재 플레이어: <span id="current-player"></span></h3>
+    <div id="dice-container"></div>
+    <button id="roll-button" onclick="rollDice()">던지기</button>
+    <p id="roll-count">던진 횟수: 0/3</p>
+  </div>
+
+  <div id="scoreboard">
+    <h3>점수판</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>플레이어 1</th>
+          <th>플레이어 2</th>
+          <th>플레이어 3</th>
+          <th>플레이어 4</th>
+        </tr>
+      </thead>
+      <tbody id="score-table-body"></tbody>
+      <tfoot id="score-table-footer"></tfoot>
+    </table>
+  </div>
+</div>
+
+<script>
+const categories = [
+  'Ones', 'Twos', 'Threes', 'Fours', 'Fives', 'Sixes',
+  'Three of a Kind', 'Four of a Kind', 'Full House',
+  'Small Straight', 'Large Straight', 'Yacht', 'Chance'
+];
+
+let players = [];
+let scores = []; // [player][category]
+let currentPlayerIndex = 0;
+let rollCount = 0;
+let dice = [0, 0, 0, 0, 0];
+let hold = [false, false, false, false, false];
+
+function startGame(numPlayers) {
+  players = [];
+  scores = [];
+  for (let i = 0; i < numPlayers; i++) {
+    players.push('플레이어 ' + (i + 1));
+    scores.push(Array(categories.length).fill(null));
+  }
+
+  currentPlayerIndex = 0;
+  rollCount = 0;
+  dice = [0,0,0,0,0];
+  hold = [false,false,false,false,false];
+
+  document.getElementById('player-selection').style.display = 'none';
+  document.getElementById('game-area').style.display = 'block';
+
+  updateCurrentPlayer();
+  renderDice();
+  updateRollCount();
+  renderScoreboard();
+  updateRollButton(true);
+}
+
+function updateCurrentPlayer() {
+  document.getElementById('current-player').textContent = players[currentPlayerIndex];
+}
+
+function renderDice() {
+  const container = document.getElementById('dice-container');
+  container.innerHTML = '';
+  dice.forEach((value, idx) => {
+    const die = document.createElement('div');
+    die.className = 'dice' + (hold[idx] ? ' selected' : '');
+    die.textContent = value === 0 ? '-' : value;
+    die.onclick = () => {
+      if (rollCount > 0 && rollCount < 3) {
+        hold[idx] = !hold[idx];
+        renderDice();
+      }
+    };
+    container.appendChild(die);
+  });
+}
+
+function rollDice() {
+  if (rollCount >= 3) return;
+
+  for (let i = 0; i < 5; i++) {
+    if (!hold[i]) dice[i] = Math.floor(Math.random() * 6) + 1;
+  }
+
+  rollCount++;
+  updateRollCount();
+  renderDice();
+
+  if (rollCount === 3) updateRollButton(false);
+}
+
+function updateRollCount() {
+  document.getElementById('roll-count').textContent = rollCount;
+}
+
+function renderScoreboard() {
+  const tbody = document.getElementById('score-table-body');
+  tbody.innerHTML = '';
+
+  // 헤더 업데이트
+  const theadRow = document.querySelector('#scoreboard thead tr');
+  theadRow.innerHTML = '<th>항목</th>';
+  players.forEach(p => {
+    const th = document.createElement('th');
+    th.textContent = p;
+    theadRow.appendChild(th);
+  });
+
+  categories.forEach((cat, catIdx) => {
+    const tr = document.createElement('tr');
+    const th = document.createElement('th');
+    th.textContent = cat;
+    tr.appendChild(th);
+
+    players.forEach((_, pIdx) => {
+      const td = document.createElement('td');
+
+      if (scores[pIdx][catIdx] !== null) {
+        td.textContent = scores[pIdx][catIdx];
+        td.className = 'taken';
+      } else if (pIdx === currentPlayerIndex && rollCount > 0) {
+        td.textContent = '-';
+        td.className = 'selectable';
+        td.addEventListener('click', () => {
+          const pts = calculateScore(catIdx, dice);
+          scores[pIdx][catIdx] = pts;
+          document.getElementById('message').textContent =
+            `${players[pIdx]}님이 "${cat}" 항목에 ${pts}점 기록!`;
+          setTimeout(() => { document.getElementById('message').textContent = ''; }, 2000);
+          nextTurn();
+        });
+      } else {
+        td.textContent = '-';
+        td.className = '';
+      }
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  // 총점 표시
+  const tfootEl = document.getElementById('score-table-footer');
+  tfootEl.innerHTML = '';
+  const trTotal = document.createElement('tr');
+  const thTotal = document.createElement('th');
+  thTotal.textContent = '총점';
+  trTotal.appendChild(thTotal);
+
+  players.forEach((_, pIdx) => {
+    const td = document.createElement('td');
+    const total = scores[pIdx].reduce((sum, val) => sum + (val===null?0:val), 0);
+    td.textContent = total;
+    td.style.fontWeight = 'bold';
+    trTotal.appendChild(td);
+  });
+
+  tfootEl.appendChild(trTotal);
+}
+
+function calculateScore(catIdx, dice) {
+  const counts = [0,0,0,0,0,0];
+  dice.forEach(d => counts[d-1]++);
+
+  switch(catIdx) {
+    case 0: return counts[0]*1;
+    case 1: return counts[1]*2;
+    case 2: return counts[2]*3;
+    case 3: return counts[3]*4;
+    case 4: return counts[4]*5;
+    case 5: return counts[5]*6;
+    case 6: return counts.some(c=>c>=3)? dice.reduce((a,b)=>a+b,0):0;
+    case 7: return counts.some(c=>c>=4)? dice.reduce((a,b)=>a+b,0):0;
+    case 8: return counts.includes(3) && counts.includes(2)? 25:0;
+    case 9: return hasStraight(counts,4)?30:0;
+    case 10:return hasStraight(counts,5)?40:0;
+    case 11:return counts.some(c=>c===5)?50:0;
+    case 12:return dice.reduce((a,b)=>a+b,0);
+    default: return 0;
+  }
+}
+
+function hasStraight(counts, length) {
+  for(let start=0; start <= counts.length-length; start++){
+    let ok=true;
+    for(let i=start;i<start+length;i++) if(counts[i]===0){ok=false;break;}
+    if(ok) return true;
+  }
+  return false;
+}
+
+function nextTurn() {
+  rollCount = 0;
+  hold = [false,false,false,false,false];
+  dice = [0,0,0,0,0];
+  currentPlayerIndex++;
+  if(currentPlayerIndex >= players.length) currentPlayerIndex = 0;
+
+  updateCurrentPlayer();
+  updateRollCount();
+  renderDice();
+  renderScoreboard();
+  updateRollButton(true);
+}
+
+function updateRollButton(enabled) {
+  document.getElementById('roll-button').disabled = !enabled;
+}
+
+</script>
+
+</body>
+</html>
