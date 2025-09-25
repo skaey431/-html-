@@ -252,223 +252,236 @@ tfoot td {
   <button onclick="startGame(4)">4명</button>
 </div>
 
-<div id="game-container" style="display:none;">
-  <div id="game-area">
-    <h3>현재 플레이어: <span id="current-player"></span></h3>
-    <div id="dice-container"></div>
-    <button id="roll-button" onclick="rollDice()">던지기</button>
-    <p id="roll-count">던진 횟수: 0/3</p>
-  </div>
+<div id="game-area" style="display:none;">
+  <h3>현재 플레이어: <span id="current-player"></span></h3>
+  <div id="dice-container"></div>
+  <button id="roll-button" onclick="rollDice()">던지기</button>
+  <p>던진 횟수: <span id="roll-count">0</span>/3</p>
 
   <div id="scoreboard">
     <h3>점수판</h3>
     <table>
       <thead>
-        <tr>
+        <tr id="scoreboard-header">
           <th>항목</th>
-          <th>플레이어 1</th>
-          <th>플레이어 2</th>
-          <th>플레이어 3</th>
-          <th>플레이어 4</th>
         </tr>
       </thead>
-      <tbody id="score-table-body"></tbody>
+      <tbody id="score-table-body">
+        <!-- JS에서 채움 -->
+      </tbody>
       <tfoot id="score-table-footer"></tfoot>
     </table>
   </div>
+
+  <div id="message"></div>
 </div>
 
 <script>
-const categories = [
-  'Ones', 'Twos', 'Threes', 'Fours', 'Fives', 'Sixes',
-  'Three of a Kind', 'Four of a Kind', 'Full House',
-  'Small Straight', 'Large Straight', 'Yacht', 'Chance'
-];
+  const categories = [
+    'Ones', 'Twos', 'Threes', 'Fours', 'Fives', 'Sixes',
+    'Three of a Kind', 'Four of a Kind', 'Full House',
+    'Small Straight', 'Large Straight', 'Yacht', 'Chance'
+  ];
 
-let players = [];
-let scores = []; // [player][category]
-let currentPlayerIndex = 0;
-let rollCount = 0;
-let dice = [0, 0, 0, 0, 0];
-let hold = [false, false, false, false, false];
+  let players = [];
+  let scores = []; // [player][category]
+  let currentPlayerIndex = 0;
+  let rollCount = 0;
+  let dice = [0, 0, 0, 0, 0];
+  let hold = [false, false, false, false, false];
 
-function startGame(numPlayers) {
-  players = [];
-  scores = [];
-  for (let i = 0; i < numPlayers; i++) {
-    players.push('플레이어 ' + (i + 1));
-    scores.push(Array(categories.length).fill(null));
+  function startGame(numPlayers) {
+    players = [];
+    scores = [];
+    for (let i=0; i<numPlayers; i++) {
+      players.push('플레이어 ' + (i+1));
+      scores.push(Array(categories.length).fill(null));
+    }
+    currentPlayerIndex = 0;
+    rollCount = 0;
+    hold = [false, false, false, false, false];
+    dice = [0,0,0,0,0];
+
+    document.getElementById('player-selection').style.display = 'none';
+    document.getElementById('game-area').style.display = 'block';
+
+    updateCurrentPlayer();
+    renderDice();
+    updateRollCount();
+    renderScoreboard();
+    updateRollButton(true);
   }
 
-  currentPlayerIndex = 0;
-  rollCount = 0;
-  dice = [0,0,0,0,0];
-  hold = [false,false,false,false,false];
-
-  document.getElementById('player-selection').style.display = 'none';
-  document.getElementById('game-area').style.display = 'block';
-
-  updateCurrentPlayer();
-  renderDice();
-  updateRollCount();
-  renderScoreboard();
-  updateRollButton(true);
-}
-
-function updateCurrentPlayer() {
-  document.getElementById('current-player').textContent = players[currentPlayerIndex];
-}
-
-function renderDice() {
-  const container = document.getElementById('dice-container');
-  container.innerHTML = '';
-  dice.forEach((value, idx) => {
-    const die = document.createElement('div');
-    die.className = 'dice' + (hold[idx] ? ' selected' : '');
-    die.textContent = value === 0 ? '-' : value;
-    die.onclick = () => {
-      if (rollCount > 0 && rollCount < 3) {
-        hold[idx] = !hold[idx];
-        renderDice();
-      }
-    };
-    container.appendChild(die);
-  });
-}
-
-function rollDice() {
-  if (rollCount >= 3) return;
-
-  for (let i = 0; i < 5; i++) {
-    if (!hold[i]) dice[i] = Math.floor(Math.random() * 6) + 1;
+  function updateCurrentPlayer() {
+    document.getElementById('current-player').textContent = players[currentPlayerIndex];
   }
 
-  rollCount++;
-  updateRollCount();
-  renderDice();
+  function renderDice() {
+    const container = document.getElementById('dice-container');
+    container.innerHTML = '';
+    dice.forEach((value, idx) => {
+      const die = document.createElement('div');
+      die.className = 'dice' + (hold[idx] ? ' selected' : '');
+      die.textContent = value === 0 ? '-' : value;
+      die.onclick = () => {
+        if (rollCount > 0 && rollCount < 3) {
+          hold[idx] = !hold[idx];
+          renderDice();
+        }
+      };
+      container.appendChild(die);
+    });
+  }
 
-  if (rollCount === 3) updateRollButton(false);
-}
-
-function updateRollCount() {
-  document.getElementById('roll-count').textContent = rollCount;
-}
-
-function renderScoreboard() {
-  const tbody = document.getElementById('score-table-body');
-  tbody.innerHTML = '';
-
-  // 헤더 업데이트
-  const theadRow = document.querySelector('#scoreboard thead tr');
-  theadRow.innerHTML = '<th>항목</th>';
-  players.forEach(p => {
-    const th = document.createElement('th');
-    th.textContent = p;
-    theadRow.appendChild(th);
-  });
-
-  categories.forEach((cat, catIdx) => {
-    const tr = document.createElement('tr');
-    const th = document.createElement('th');
-    th.textContent = cat;
-    tr.appendChild(th);
-
-    players.forEach((_, pIdx) => {
-      const td = document.createElement('td');
-
-      if (scores[pIdx][catIdx] !== null) {
-        td.textContent = scores[pIdx][catIdx];
-        td.className = 'taken';
-      } else if (pIdx === currentPlayerIndex && rollCount > 0) {
-        td.textContent = '-';
-        td.className = 'selectable';
-        td.addEventListener('click', () => {
-          const pts = calculateScore(catIdx, dice);
-          scores[pIdx][catIdx] = pts;
-          document.getElementById('message').textContent =
-            `${players[pIdx]}님이 "${cat}" 항목에 ${pts}점 기록!`;
-          setTimeout(() => { document.getElementById('message').textContent = ''; }, 2000);
-          nextTurn();
-        });
-      } else {
-        td.textContent = '-';
-        td.className = '';
+  function rollDice() {
+    if (rollCount >= 3) {
+      showMessage('한 턴에 주사위는 최대 3번만 던질 수 있습니다.', true);
+      return;
+    }
+    for(let i=0; i<5; i++) {
+      if (!hold[i]) {
+        dice[i] = Math.floor(Math.random() * 6) + 1;
       }
+    }
+    rollCount++;
+    updateRollCount();
+    renderDice();
 
-      tr.appendChild(td);
+    if (rollCount === 3) {
+      updateRollButton(false);
+      showMessage('점수 항목을 선택하세요', true);
+    }
+  }
+
+  function updateRollCount() {
+    document.getElementById('roll-count').textContent = rollCount;
+  }
+
+  function renderScoreboard() {
+    const tbody = document.getElementById('score-table-body');
+    tbody.innerHTML = '';
+
+    const theadRow = document.getElementById('scoreboard-header');
+    theadRow.innerHTML = '<th>항목</th>';
+    players.forEach(p => {
+      const th = document.createElement('th');
+      th.textContent = p;
+      theadRow.appendChild(th);
     });
 
-    tbody.appendChild(tr);
-  });
+    categories.forEach((cat, catIdx) => {
+      const tr = document.createElement('tr');
+      const th = document.createElement('th');
+      th.textContent = cat;
+      tr.appendChild(th);
 
-  // 총점 표시
-  const tfootEl = document.getElementById('score-table-footer');
-  tfootEl.innerHTML = '';
-  const trTotal = document.createElement('tr');
-  const thTotal = document.createElement('th');
-  thTotal.textContent = '총점';
-  trTotal.appendChild(thTotal);
+      players.forEach((_, p) => {
+        const td = document.createElement('td');
 
-  players.forEach((_, pIdx) => {
-    const td = document.createElement('td');
-    const total = scores[pIdx].reduce((sum, val) => sum + (val===null?0:val), 0);
-    td.textContent = total;
-    td.style.fontWeight = 'bold';
-    trTotal.appendChild(td);
-  });
+        if (scores[p][catIdx] !== null) {
+          td.textContent = scores[p][catIdx];
+          td.className = 'taken';
+        } else {
+          if (p === currentPlayerIndex) {
+            td.textContent = '-';
+            td.className = 'selectable';
+            td.onclick = () => {
+              const pts = calculateScore(catIdx, dice);
+              scores[p][catIdx] = pts;
+              showMessage(`${players[p]}님이 "${cat}" 항목에 ${pts}점 기록!`);
+              nextTurn();
+            };
+          } else {
+            td.textContent = '-';
+          }
+        }
 
-  tfootEl.appendChild(trTotal);
-}
+        tr.appendChild(td);
+      });
 
-function calculateScore(catIdx, dice) {
-  const counts = [0,0,0,0,0,0];
-  dice.forEach(d => counts[d-1]++);
+      tbody.appendChild(tr);
+    });
 
-  switch(catIdx) {
-    case 0: return counts[0]*1;
-    case 1: return counts[1]*2;
-    case 2: return counts[2]*3;
-    case 3: return counts[3]*4;
-    case 4: return counts[4]*5;
-    case 5: return counts[5]*6;
-    case 6: return counts.some(c=>c>=3)? dice.reduce((a,b)=>a+b,0):0;
-    case 7: return counts.some(c=>c>=4)? dice.reduce((a,b)=>a+b,0):0;
-    case 8: return counts.includes(3) && counts.includes(2)? 25:0;
-    case 9: return hasStraight(counts,4)?30:0;
-    case 10:return hasStraight(counts,5)?40:0;
-    case 11:return counts.some(c=>c===5)?50:0;
-    case 12:return dice.reduce((a,b)=>a+b,0);
-    default: return 0;
+    // 총점 표시
+    const tfootEl = document.getElementById('score-table-footer');
+    tfootEl.innerHTML = '';
+    const trTotal = document.createElement('tr');
+    const thTotal = document.createElement('th');
+    thTotal.textContent = '총점';
+    trTotal.appendChild(thTotal);
+
+    players.forEach((_, p) => {
+      const td = document.createElement('td');
+      const total = scores[p].reduce((sum, val) => sum + (val===null?0:val), 0);
+      td.textContent = total;
+      td.style.fontWeight = 'bold';
+      trTotal.appendChild(td);
+    });
+
+    tfootEl.appendChild(trTotal);
   }
-}
 
-function hasStraight(counts, length) {
-  for(let start=0; start <= counts.length-length; start++){
-    let ok=true;
-    for(let i=start;i<start+length;i++) if(counts[i]===0){ok=false;break;}
-    if(ok) return true;
+  function calculateScore(catIdx, dice) {
+    const counts = [0,0,0,0,0,0];
+    dice.forEach(d => counts[d-1]++);
+
+    switch(catIdx) {
+      case 0: return counts[0]*1;
+      case 1: return counts[1]*2;
+      case 2: return counts[2]*3;
+      case 3: return counts[3]*4;
+      case 4: return counts[4]*5;
+      case 5: return counts[5]*6;
+      case 6: return counts.some(c => c >=3) ? dice.reduce((a,b)=>a+b,0) : 0;
+      case 7: return counts.some(c => c >=4) ? dice.reduce((a,b)=>a+b,0) : 0;
+      case 8: return (counts.includes(3) && counts.includes(2)) ? 25 : 0;
+      case 9: return hasStraight(counts,4) ? 30 : 0;
+      case 10: return hasStraight(counts,5) ? 40 : 0;
+      case 11: return counts.some(c => c === 5) ? 50 : 0;
+      case 12: return dice.reduce((a,b)=>a+b,0);
+      default: return 0;
+    }
   }
-  return false;
-}
 
-function nextTurn() {
-  rollCount = 0;
-  hold = [false,false,false,false,false];
-  dice = [0,0,0,0,0];
-  currentPlayerIndex++;
-  if(currentPlayerIndex >= players.length) currentPlayerIndex = 0;
+  function hasStraight(counts, length) {
+    for(let start=0; start <= counts.length - length; start++) {
+      let straight = true;
+      for(let i=start; i<start+length; i++) {
+        if (counts[i] === 0) {
+          straight = false;
+          break;
+        }
+      }
+      if (straight) return true;
+    }
+    return false;
+  }
 
-  updateCurrentPlayer();
-  updateRollCount();
-  renderDice();
-  renderScoreboard();
-  updateRollButton(true);
-}
+  function nextTurn() {
+    rollCount = 0;
+    hold = [false,false,false,false,false];
+    dice = [0,0,0,0,0];
 
-function updateRollButton(enabled) {
-  document.getElementById('roll-button').disabled = !enabled;
-}
+    currentPlayerIndex++;
+    if(currentPlayerIndex >= players.length) currentPlayerIndex = 0;
 
+    updateCurrentPlayer();
+    updateRollCount();
+    renderDice();
+    renderScoreboard();
+    updateRollButton(true);
+  }
+
+  function updateRollButton(enabled) {
+    document.getElementById('roll-button').disabled = !enabled;
+  }
+
+  function showMessage(msg, warning=false) {
+    const msgEl = document.getElementById('message');
+    msgEl.textContent = msg;
+    msgEl.style.color = warning ? "red" : "green";
+    setTimeout(() => { msgEl.textContent = ''; }, 2000);
+  }
 </script>
 
 </body>
