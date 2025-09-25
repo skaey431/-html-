@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>야흐트 게임</title>
+<title>야흐트 게임 (AI 통합)</title>
 <style>
 body {
   font-family: '맑은 고딕', Malgun Gothic, Arial, sans-serif;
@@ -14,14 +14,12 @@ body {
   margin: auto;
   overflow-x: hidden;
 }
-
 #game-container {
   display: flex;
   gap: 20px;
   min-height: 600px;
   overflow-x: hidden;
 }
-
 #game-area {
   flex: 1 1 350px;
   background: white;
@@ -36,7 +34,6 @@ body {
   flex-direction: column;
   align-items: center;
 }
-
 #scoreboard {
   flex: 2 1 700px;
   background: white;
@@ -48,46 +45,41 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
 }
-
 table {
   width: 100%;
   border-collapse: collapse;
   min-width: 700px;
 }
-
 h1 {
   text-align: center;
   color: #064663;
   margin-bottom: 20px;
 }
-
 #player-selection {
   text-align: center;
   margin-bottom: 30px;
 }
-
-#player-selection button {
+#player-selection select, #player-selection button {
   background-color: #2a9d8f;
   border: none;
   color: white;
-  padding: 10px 20px;
+  padding: 10px 14px;
   margin: 0 8px;
-  font-size: 18px;
+  font-size: 16px;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
-
-#player-selection button:hover {
+#player-selection select { padding: 8px 12px; color: #064663; }
+#player-selection .start-btn { padding: 10px 18px; font-size: 18px; }
+#player-selection button:hover, #player-selection select:hover {
   background-color: #21867a;
 }
-
 #current-player {
   color: #2a9d8f;
   font-weight: 700;
   margin-bottom: 10px;
 }
-
 #dice-container {
   display: flex;
   gap: 10px;
@@ -98,7 +90,6 @@ h1 {
   max-width: 100%;
   box-sizing: border-box;
 }
-
 .dice {
   flex-shrink: 0;
   flex-grow: 0;
@@ -117,17 +108,14 @@ h1 {
   transition: background-color 0.25s, border-color 0.25s;
   text-align: center;
 }
-
 .dice.selected {
   background-color: #2a9d8f;
   color: white;
   border-color: #1b6770;
 }
-
 .dice:hover:not(.selected) {
   background-color: #ade8f4;
 }
-
 #roll-button {
   margin: 25px auto 0 auto;
   padding: 12px 30px;
@@ -140,16 +128,13 @@ h1 {
   transition: background-color 0.3s;
   display: block;
 }
-
 #roll-button:disabled {
   background-color: #94a7b9;
   cursor: not-allowed;
 }
-
 #roll-button:hover:not(:disabled) {
   background-color: #1b3940;
 }
-
 #roll-count {
   text-align: center;
   font-size: 18px;
@@ -157,28 +142,23 @@ h1 {
   margin-top: 5px;
   color: #264653;
 }
-
 th, td {
   border: 1px solid #b2bec3;
   padding: 10px 14px;
   text-align: center;
   font-size: 16px;
 }
-
 thead th {
   background-color: #0984e3;
   color: white;
   font-weight: 700;
 }
-
 tbody tr:nth-child(even) {
   background-color: #dfe6e9;
 }
-
 tbody tr:hover {
   background-color: #b2bec3;
 }
-
 td.selectable {
   background-color: #74b9ff;
   color: #2d3436;
@@ -186,57 +166,33 @@ td.selectable {
   font-weight: 600;
   transition: background-color 0.2s;
 }
-
 td.selectable:hover {
   background-color: #0984e3;
   color: white;
 }
-
 td.taken {
   background-color: #636e72;
   color: #dfe6e9;
   cursor: default;
 }
-
 tfoot th {
   background-color: #00b894;
   color: white;
   font-weight: 700;
   font-size: 18px;
 }
-
 tfoot td {
   background-color: #55efc4;
   font-weight: 700;
   font-size: 16px;
 }
-
+#message { margin-top: 10px; height: 20px; font-weight: 700; }
 @media (max-width: 900px) {
-  #game-container {
-    flex-direction: column;
-    overflow-x: hidden;
-  }
-  #scoreboard {
-    width: 100%;
-    max-height: none;
-    margin-top: 20px;
-    overflow-x: auto;
-    min-width: auto;
-  }
-  #game-area {
-    width: 100%;
-    min-width: auto;
-    overflow-x: hidden;
-    margin-bottom: 20px;
-  }
-  #dice-container {
-    justify-content: flex-start;
-    overflow-x: hidden;
-  }
-  .dice {
-    width: 50px;
-    min-width: 50px;
-  }
+  #game-container { flex-direction: column; overflow-x: hidden; }
+  #scoreboard { width: 100%; max-height: none; margin-top: 20px; overflow-x: auto; min-width: auto; }
+  #game-area { width: 100%; min-width: auto; overflow-x: hidden; margin-bottom: 20px; }
+  #dice-container { justify-content: flex-start; overflow-x: hidden; }
+  .dice { width: 50px; min-width: 50px; }
 }
 </style>
 </head>
@@ -245,17 +201,29 @@ tfoot td {
 <h1>야흐트 게임</h1>
 
 <div id="player-selection">
-  <h3>플레이어 수 선택</h3>
-  <button onclick="startGame(1)">1명</button>
-  <button onclick="startGame(2)">2명</button>
-  <button onclick="startGame(3)">3명</button>
-  <button onclick="startGame(4)">4명</button>
+  <h3>플레이어 구성</h3>
+  <label style="color:#064663; font-weight:700; margin-right:8px;">사람:</label>
+  <select id="human-count">
+    <option value="1">1</option>
+    <option value="2" selected>2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+  </select>
+  <label style="color:#064663; font-weight:700; margin: 0 8px;">AI:</label>
+  <select id="ai-count">
+    <option value="0" selected>0</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+  </select>
+  <button class="start-btn" onclick="startGameFromUI()">시작</button>
+  <div style="margin-top:10px; color:#666;">(총 플레이어 수은 1~4명이어야 합니다)</div>
 </div>
 
 <div id="game-area" style="display:none;">
   <h3>현재 플레이어: <span id="current-player"></span></h3>
   <div id="dice-container"></div>
-  <button id="roll-button" onclick="rollDice()">던지기</button>
+  <button id="roll-button" onclick="humanRollDice()">던지기</button>
   <p>던진 횟수: <span id="roll-count">0</span>/3</p>
 
   <div id="scoreboard">
@@ -266,9 +234,7 @@ tfoot td {
           <th>항목</th>
         </tr>
       </thead>
-      <tbody id="score-table-body">
-        <!-- JS에서 채움 -->
-      </tbody>
+      <tbody id="score-table-body"></tbody>
       <tfoot id="score-table-footer"></tfoot>
     </table>
   </div>
@@ -277,212 +243,186 @@ tfoot td {
 </div>
 
 <script>
-  const categories = [
-    'Ones', 'Twos', 'Threes', 'Fours', 'Fives', 'Sixes',
-    'Three of a Kind', 'Four of a Kind', 'Full House',
-    'Small Straight', 'Large Straight', 'Yacht', 'Chance'
-  ];
+const categories = [
+  'Ones', 'Twos', 'Threes', 'Fours', 'Fives', 'Sixes',
+  'Three of a Kind', 'Four of a Kind', 'Full House',
+  'Small Straight', 'Large Straight', 'Yacht', 'Chance'
+];
+let players = [], isAI = [], scores = [], currentPlayerIndex=0;
+let rollCount=0, dice=[0,0,0,0,0], hold=[false,false,false,false,false];
+let aiThinking=false;
 
-  let players = [];
-  let scores = []; // [player][category]
-  let currentPlayerIndex = 0;
-  let rollCount = 0;
-  let dice = [0, 0, 0, 0, 0];
-  let hold = [false, false, false, false, false];
+// 점수판 기대값 (각 족보별 평균 점수)
+const expectedScores = {
+  'Ones': 2, 'Twos': 4, 'Threes': 6, 'Fours': 8, 'Fives': 10, 'Sixes':12,
+  'Three of a Kind': 15, 'Four of a Kind': 20, 'Full House': 25,
+  'Small Straight': 30, 'Large Straight': 40, 'Yacht': 50, 'Chance': 22
+};
 
-  function startGame(numPlayers) {
-    players = [];
-    scores = [];
-    for (let i=0; i<numPlayers; i++) {
-      players.push('플레이어 ' + (i+1));
-      scores.push(Array(categories.length).fill(null));
-    }
-    currentPlayerIndex = 0;
-    rollCount = 0;
-    hold = [false, false, false, false, false];
-    dice = [0,0,0,0,0];
+function startGameFromUI(){
+  const humans=parseInt(document.getElementById('human-count').value,10);
+  const ais=parseInt(document.getElementById('ai-count').value,10);
+  if(humans+ais<1||humans+ais>4){alert('총 플레이어 수는 1~4명이어야 합니다.'); return;}
+  startGame(humans,ais);
+}
 
-    document.getElementById('player-selection').style.display = 'none';
-    document.getElementById('game-area').style.display = 'block';
+function startGame(humanCount,aiCount){
+  players=[]; isAI=[]; scores=[];
+  let idx=1;
+  for(let i=0;i<humanCount;i++){players.push('플레이어 '+idx++); isAI.push(false); scores.push(Array(categories.length).fill(null));}
+  for(let j=0;j<aiCount;j++){players.push('AI '+(j+1)); isAI.push(true); scores.push(Array(categories.length).fill(null));}
+  currentPlayerIndex=0; rollCount=0; dice=[0,0,0,0,0]; hold=[false,false,false,false,false]; aiThinking=false;
+  document.getElementById('player-selection').style.display='none';
+  document.getElementById('game-area').style.display='block';
+  updateCurrentPlayer(); renderDice(); updateRollCount(); renderScoreboard(); updateRollButton(true);
+}
 
-    updateCurrentPlayer();
-    renderDice();
-    updateRollCount();
-    renderScoreboard();
-    updateRollButton(true);
-  }
+function updateCurrentPlayer(){document.getElementById('current-player').textContent=players[currentPlayerIndex];}
+function renderDice(){
+  const container=document.getElementById('dice-container'); container.innerHTML='';
+  dice.forEach((v,i)=>{
+    const div=document.createElement('div');
+    div.className='dice'+(hold[i]?' selected':''); div.textContent=v===0?'-':v;
+    div.onclick=()=>{if(isAI[currentPlayerIndex]) return; if(rollCount>0&&rollCount<3){hold[i]=!hold[i]; renderDice();}};
+    container.appendChild(div);
+  });
+}
+function updateRollCount(){document.getElementById('roll-count').textContent=rollCount;}
+function updateRollButton(enabled){const btn=document.getElementById('roll-button'); btn.disabled=!enabled||aiThinking;}
+function humanRollDice(){if(isAI[currentPlayerIndex]) return; rollDice(); renderScoreboard();}
+function rollDice(){if(rollCount>=3)return; for(let i=0;i<5;i++){if(!hold[i]) dice[i]=Math.floor(Math.random()*6)+1;} rollCount++; updateRollCount(); renderDice(); if(rollCount===3) updateRollButton(false);}
 
-  function updateCurrentPlayer() {
-    document.getElementById('current-player').textContent = players[currentPlayerIndex];
-  }
-
-  function renderDice() {
-    const container = document.getElementById('dice-container');
-    container.innerHTML = '';
-    dice.forEach((value, idx) => {
-      const die = document.createElement('div');
-      die.className = 'dice' + (hold[idx] ? ' selected' : '');
-      die.textContent = value === 0 ? '-' : value;
-      die.onclick = () => {
-        if (rollCount > 0 && rollCount < 3) {
-          hold[idx] = !hold[idx];
-          renderDice();
-        }
-      };
-      container.appendChild(die);
-    });
-  }
-
-  function rollDice() {
-    if (rollCount >= 3) {
-      showMessage('한 턴에 주사위는 최대 3번만 던질 수 있습니다.', true);
-      return;
-    }
-    for(let i=0; i<5; i++) {
-      if (!hold[i]) {
-        dice[i] = Math.floor(Math.random() * 6) + 1;
+function renderScoreboard(){
+  const tbody=document.getElementById('score-table-body'); tbody.innerHTML='';
+  const theadRow=document.getElementById('scoreboard-header'); theadRow.innerHTML='<th>항목</th>';
+  players.forEach(p=>{const th=document.createElement('th'); th.textContent=p; theadRow.appendChild(th);});
+  categories.forEach((cat,catIdx)=>{
+    const tr=document.createElement('tr');
+    const th=document.createElement('th'); th.textContent=cat; tr.appendChild(th);
+    for(let p=0;p<players.length;p++){
+      const td=document.createElement('td');
+      if(scores[p][catIdx]!==null){td.textContent=scores[p][catIdx]; td.className='taken';}
+      else{
+        if(p===currentPlayerIndex&&!isAI[p]&&rollCount>0){
+          td.textContent='-'; td.className='selectable';
+          td.onclick=()=>{
+            // 전략적 선택: 기대값 미만이면 다른 빈칸으로
+            const pts=calculateScore(catIdx,dice);
+            const minExpect=expectedScores[cat];
+            let recordIdx=catIdx;
+            if(pts<minExpect){
+              // Ones~Sixes 우선
+              for(let i=0;i<6;i++){if(scores[p][i]===null){recordIdx=i; break;}}
+              // 만약 다 차있으면 catIdx 그대로
+            }
+            scores[p][recordIdx]=calculateScore(recordIdx,dice);
+            showMessage(`${players[p]}님이 "${categories[recordIdx]}" 항목에 ${scores[p][recordIdx]}점 기록!`);
+            renderScoreboard();
+            setTimeout(()=>nextTurn(),250);
+          };
+        }else{td.textContent='-';}
       }
+      tr.appendChild(td);
     }
-    rollCount++;
-    updateRollCount();
-    renderDice();
-
-    if (rollCount === 3) {
-      updateRollButton(false);
-      showMessage('점수 항목을 선택하세요', true);
-    }
+    tbody.appendChild(tr);
+  });
+  const tfootEl=document.getElementById('score-table-footer'); tfootEl.innerHTML='';
+  const trTotal=document.createElement('tr'); const thTotal=document.createElement('th'); thTotal.textContent='총점'; trTotal.appendChild(thTotal);
+  for(let p=0;p<players.length;p++){
+    const td=document.createElement('td'); const total=scores[p].reduce((s,val)=>s+(val===null?0:val),0); td.textContent=total; td.style.fontWeight='bold'; trTotal.appendChild(td);
   }
+  tfootEl.appendChild(trTotal);
+}
 
-  function updateRollCount() {
-    document.getElementById('roll-count').textContent = rollCount;
+function calculateScore(catIdx,diceArr){
+  const counts=[0,0,0,0,0,0]; diceArr.forEach(d=>counts[d-1]++);
+  switch(catIdx){
+    case 0: return counts[0]*1;
+    case 1: return counts[1]*2;
+    case 2: return counts[2]*3;
+    case 3: return counts[3]*4;
+    case 4: return counts[4]*5;
+    case 5: return counts[5]*6;
+    case 6: return counts.some(c=>c>=3)?diceArr.reduce((a,b)=>a+b,0):0;
+    case 7: return counts.some(c=>c>=4)?diceArr.reduce((a,b)=>a+b,0):0;
+    case 8: return (counts.includes(3)&&counts.includes(2))?25:0;
+    case 9: return hasStraight(counts,4)?30:0;
+    case 10: return hasStraight(counts,5)?40:0;
+    case 11: return counts.some(c=>c===5)?50:0;
+    case 12: return diceArr.reduce((a,b)=>a+b,0);
+    default: return 0;
   }
+}
+function hasStraight(counts,length){for(let start=0;start<=counts.length-length;start++){let ok=true; for(let i=start;i<start+length;i++){if(counts[i]===0){ok=false; break;}} if(ok) return true;} return false;}
 
-  function renderScoreboard() {
-    const tbody = document.getElementById('score-table-body');
-    tbody.innerHTML = '';
+function nextTurn(){
+  if(isGameOver()){showMessage('게임 종료! 최종 점수 확인하세요.'); updateRollButton(false); renderScoreboard(); return;}
+  rollCount=0; hold=[false,false,false,false,false]; dice=[0,0,0,0,0];
+  currentPlayerIndex++; if(currentPlayerIndex>=players.length) currentPlayerIndex=0;
+  updateCurrentPlayer(); updateRollCount(); renderDice(); renderScoreboard(); updateRollButton(true);
+  if(isAI[currentPlayerIndex]) setTimeout(()=>startAIturn(currentPlayerIndex),400);
+}
+function isGameOver(){for(let p=0;p<players.length;p++){for(let c=0;c<categories.length;c++){if(scores[p][c]===null) return false;}} return true;}
+function showMessage(msg,warning=false){const el=document.getElementById('message'); el.textContent=msg; el.style.color=warning?'red':'green'; setTimeout(()=>{if(el.textContent===msg) el.textContent='';},2000);}
 
-    const theadRow = document.getElementById('scoreboard-header');
-    theadRow.innerHTML = '<th>항목</th>';
-    players.forEach(p => {
-      const th = document.createElement('th');
-      th.textContent = p;
-      theadRow.appendChild(th);
-    });
-
-    categories.forEach((cat, catIdx) => {
-      const tr = document.createElement('tr');
-      const th = document.createElement('th');
-      th.textContent = cat;
-      tr.appendChild(th);
-
-      players.forEach((_, p) => {
-        const td = document.createElement('td');
-
-        if (scores[p][catIdx] !== null) {
-          td.textContent = scores[p][catIdx];
-          td.className = 'taken';
-        } else {
-          if (p === currentPlayerIndex) {
-            td.textContent = '-';
-            td.className = 'selectable';
-            td.onclick = () => {
-              const pts = calculateScore(catIdx, dice);
-              scores[p][catIdx] = pts;
-              showMessage(`${players[p]}님이 "${cat}" 항목에 ${pts}점 기록!`);
-              nextTurn();
-            };
-          } else {
-            td.textContent = '-';
-          }
-        }
-
-        tr.appendChild(td);
-      });
-
-      tbody.appendChild(tr);
-    });
-
-    // 총점 표시
-    const tfootEl = document.getElementById('score-table-footer');
-    tfootEl.innerHTML = '';
-    const trTotal = document.createElement('tr');
-    const thTotal = document.createElement('th');
-    thTotal.textContent = '총점';
-    trTotal.appendChild(thTotal);
-
-    players.forEach((_, p) => {
-      const td = document.createElement('td');
-      const total = scores[p].reduce((sum, val) => sum + (val===null?0:val), 0);
-      td.textContent = total;
-      td.style.fontWeight = 'bold';
-      trTotal.appendChild(td);
-    });
-
-    tfootEl.appendChild(trTotal);
+/* ===== AI ===== */
+function startAIturn(playerIdx){
+  if(!isAI[playerIdx]) return; aiThinking=true; updateRollButton(false); showMessage(`${players[playerIdx]} 턴 (AI) - 생각 중...`,false);
+  function aiStep(){
+    if(rollCount===0){rollDice(); renderScoreboard(); setTimeout(aiStep,600); return;}
+    const remainingRolls=3-rollCount; hold=aiChooseHold(dice,playerIdx); renderDice();
+    const currentBest=getBestCategoryScoreForDice(dice,playerIdx);
+    if(remainingRolls<=0){finalizeAIScore(playerIdx); return;}
+    const expected=expectedBestAfterReroll(hold,playerIdx);
+    const threshold=0.5;
+    if(expected>currentBest+threshold&&rollCount<3){setTimeout(()=>{rollDice(); renderScoreboard(); setTimeout(aiStep,600);},400);}
+    else finalizeAIScore(playerIdx);
   }
+  aiStep();
+}
 
-  function calculateScore(catIdx, dice) {
-    const counts = [0,0,0,0,0,0];
-    dice.forEach(d => counts[d-1]++);
-
-    switch(catIdx) {
-      case 0: return counts[0]*1;
-      case 1: return counts[1]*2;
-      case 2: return counts[2]*3;
-      case 3: return counts[3]*4;
-      case 4: return counts[4]*5;
-      case 5: return counts[5]*6;
-      case 6: return counts.some(c => c >=3) ? dice.reduce((a,b)=>a+b,0) : 0;
-      case 7: return counts.some(c => c >=4) ? dice.reduce((a,b)=>a+b,0) : 0;
-      case 8: return (counts.includes(3) && counts.includes(2)) ? 25 : 0;
-      case 9: return hasStraight(counts,4) ? 30 : 0;
-      case 10: return hasStraight(counts,5) ? 40 : 0;
-      case 11: return counts.some(c => c === 5) ? 50 : 0;
-      case 12: return dice.reduce((a,b)=>a+b,0);
-      default: return 0;
-    }
+function finalizeAIScore(playerIdx){
+  const best=findBestCategoryForDice(dice,playerIdx);
+  let recordIdx=null;
+  if(best){
+    const catName=categories[best.catIdx];
+    const expect=expectedScores[catName];
+    if(best.score<expect){
+      for(let i=0;i<6;i++){if(scores[playerIdx][i]===null){recordIdx=i; break;}}
+      if(recordIdx===null) recordIdx=best.catIdx;
+    }else recordIdx=best.catIdx;
+    scores[playerIdx][recordIdx]=calculateScore(recordIdx,dice);
+    showMessage(`${players[playerIdx]} (AI)가 "${categories[recordIdx]}" 항목에 ${scores[playerIdx][recordIdx]}점 기록!`);
   }
+  aiThinking=false; renderScoreboard(); setTimeout(nextTurn,600);
+}
 
-  function hasStraight(counts, length) {
-    for(let start=0; start <= counts.length - length; start++) {
-      let straight = true;
-      for(let i=start; i<start+length; i++) {
-        if (counts[i] === 0) {
-          straight = false;
-          break;
-        }
-      }
-      if (straight) return true;
-    }
-    return false;
+function aiChooseHold(diceArr,playerIdx){
+  const counts=[0,0,0,0,0,0]; diceArr.forEach(d=>counts[d-1]++);
+  const maxCount=Math.max(...counts);
+  const val=counts.indexOf(maxCount)+1;
+  return diceArr.map(d=>d===val);
+}
+
+function getBestCategoryScoreForDice(diceArr,playerIdx){
+  let bestScore=0;
+  for(let c=0;c<categories.length;c++){
+    if(scores[playerIdx][c]===null){const s=calculateScore(c,diceArr); if(s>bestScore) bestScore=s;}
   }
+  return bestScore;
+}
 
-  function nextTurn() {
-    rollCount = 0;
-    hold = [false,false,false,false,false];
-    dice = [0,0,0,0,0];
+function expectedBestAfterReroll(holdArr,playerIdx){
+  return 22; // 간단히 Chance 평균값으로 AI 판단 (정밀 계산 생략)
+}
 
-    currentPlayerIndex++;
-    if(currentPlayerIndex >= players.length) currentPlayerIndex = 0;
-
-    updateCurrentPlayer();
-    updateRollCount();
-    renderDice();
-    renderScoreboard();
-    updateRollButton(true);
+function findBestCategoryForDice(diceArr,playerIdx){
+  let best={score:0,catIdx:null};
+  for(let c=0;c<categories.length;c++){
+    if(scores[playerIdx][c]===null){const s=calculateScore(c,diceArr); if(s>best.score){best.score=s; best.catIdx=c;}}
   }
-
-  function updateRollButton(enabled) {
-    document.getElementById('roll-button').disabled = !enabled;
-  }
-
-  function showMessage(msg, warning=false) {
-    const msgEl = document.getElementById('message');
-    msgEl.textContent = msg;
-    msgEl.style.color = warning ? "red" : "green";
-    setTimeout(() => { msgEl.textContent = ''; }, 2000);
-  }
+  return best;
+}
 </script>
-
 </body>
 </html>
